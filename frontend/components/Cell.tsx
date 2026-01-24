@@ -11,6 +11,7 @@ interface CellProps {
   disabled?: boolean;
   size?: number;
   isWinningCell?: boolean;
+  disappearingMode?: boolean;
 }
 
 export const Cell: React.FC<CellProps> = ({
@@ -19,6 +20,7 @@ export const Cell: React.FC<CellProps> = ({
   disabled = false,
   size = SIZES.cellSize,
   isWinningCell = false,
+  disappearingMode = false,
 }) => {
   const cellStyle: ViewStyle = {
     width: size,
@@ -29,6 +31,7 @@ export const Cell: React.FC<CellProps> = ({
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: 8,
+    opacity: disappearingMode && value !== null ? 0.3 : 1,
   };
 
   const iconSize = size * 0.6;
