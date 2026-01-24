@@ -80,10 +80,12 @@ export const gameLogic9x9 = {
   },
 
   // Get next active board based on move
-  getNextActiveBoard(cellIndex: number, smallBoards: Player[]): number | null {
+  getNextActiveBoard(cellIndex: number, smallBoards: Player[], board: Board9x9): number | null {
     const nextBoard = cellIndex % 9;
+    const nextSmallBoard = board[nextBoard];
+    
     // If next board is already won or full, player can choose any board
-    if (smallBoards[nextBoard] !== null || this.isSmallBoardFull(this.getSmallBoard(nextBoard, this.createEmptyBoard()))) {
+    if (smallBoards[nextBoard] !== null || this.isSmallBoardFull(nextSmallBoard)) {
       return null; // Any board is available
     }
     return nextBoard;
