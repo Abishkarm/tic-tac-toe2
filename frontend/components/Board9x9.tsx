@@ -72,7 +72,7 @@ const styles = StyleSheet.create({
   board: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    width: (SIZES.cellSize9x9 * 3 + 6) * 3 + 12,
+    width: (SIZES.cellSize9x9 * 3 + 8) * 3 + 16,
     gap: 4,
     backgroundColor: COLORS.primary,
     padding: 4,
@@ -81,8 +81,8 @@ const styles = StyleSheet.create({
   smallBoard: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    width: SIZES.cellSize9x9 * 3 + 6,
-    height: SIZES.cellSize9x9 * 3 + 6,
+    width: SIZES.cellSize9x9 * 3 + 8,
+    height: SIZES.cellSize9x9 * 3 + 8,
     gap: 2,
     backgroundColor: COLORS.border,
     padding: 2,
