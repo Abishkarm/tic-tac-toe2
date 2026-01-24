@@ -84,7 +84,7 @@ const styles = StyleSheet.create({
     width: SIZES.cellSize9x9 * 3 + 4,
     height: SIZES.cellSize9x9 * 3 + 4,
     gap: 2,
-    backgroundColor: COLORS.cardBg,
+    backgroundColor: '#E5E9ED',
     padding: 2,
     borderRadius: 6,
     borderWidth: 2,
@@ -96,7 +96,7 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.cellActive,
   },
   smallBoardWon: {
-    backgroundColor: COLORS.background,
+    backgroundColor: '#D1D8E0',
   },
   winnerOverlay: {
     flex: 1,
