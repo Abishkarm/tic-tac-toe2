@@ -340,7 +340,8 @@ export default function Game3x3Screen() {
               </Animatable.View>
             )}
           </Animatable.View>
-        </View>
+          </TouchableOpacity>
+        </TouchableOpacity>
       </Modal>
 
       {!showModeSelector && (
