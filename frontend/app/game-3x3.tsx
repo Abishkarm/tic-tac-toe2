@@ -8,7 +8,6 @@ import {
   StatusBar,
   Modal,
   ScrollView,
-  Switch,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -24,10 +23,12 @@ import { COLORS, FONTS, SIZES } from '../constants/theme';
 import { Player, Difficulty, MultiplayerMode } from '../types/game';
 import * as Animatable from 'react-native-animatable';
 
+type GameVariant = 'classic' | 'disappearing';
+
 export default function Game3x3Screen() {
   const router = useRouter();
   const { setLastPage, updateScore, triggerVibration, soundEnabled, showReplayButton } = useSettingsStore();
-  const { addMove, undoLastMove, clearHistory, canUndo } = useGameStore();
+  const { addMove, undoLastMove, clearHistory, canUndo, getMoveHistory } = useGameStore();
 
   const [board, setBoard] = useState(gameLogic3x3.createEmptyBoard());
   const [currentPlayer, setCurrentPlayer] = useState<Player>('X');
@@ -36,10 +37,10 @@ export default function Game3x3Screen() {
   const [isDraw, setIsDraw] = useState(false);
   const [settingsVisible, setSettingsVisible] = useState(false);
   const [gameMode, setGameMode] = useState<MultiplayerMode>('local');
+  const [gameVariant, setGameVariant] = useState<GameVariant>('classic');
   const [difficulty, setDifficulty] = useState<Difficulty>('hard');
   const [showModeSelector, setShowModeSelector] = useState(true);
   const [isAIThinking, setIsAIThinking] = useState(false);
-  const [disappearingMode, setDisappearingMode] = useState(false);
 
   useEffect(() => {
     setLastPage('/game-3x3');
@@ -68,16 +69,46 @@ export default function Game3x3Screen() {
     }
   }, [currentPlayer, gameMode, winner, isDraw, showModeSelector]);
 
+  const applyDisappearingMode = (newBoard: any[], moveHistory: any[]) => {
+    if (gameVariant !== 'disappearing' || moveHistory.length <= 6) {
+      return newBoard;
+    }
+
+    // Only keep the last 6 moves on the board
+    const boardCopy = [...newBoard];
+    const recentMoves = moveHistory.slice(-6);
+    
+    // Clear all cells
+    for (let i = 0; i < boardCopy.length; i++) {
+      boardCopy[i] = null;
+    }
+    
+    // Re-apply only the last 6 moves
+    recentMoves.forEach((move: any) => {
+      boardCopy[move.index] = move.player;
+    });
+    
+    return boardCopy;
+  };
+
   const handleCellPress = (index: number) => {
     if (board[index] !== null || winner || isDraw || isAIThinking) return;
 
-    const newBoard = gameLogic3x3.makeMove(board, index, currentPlayer);
+    let newBoard = gameLogic3x3.makeMove(board, index, currentPlayer);
+    addMove(index, currentPlayer);
+    
+    const currentHistory = getMoveHistory();
+    
+    // Apply disappearing mode if enabled
+    if (gameVariant === 'disappearing') {
+      newBoard = applyDisappearingMode(newBoard, currentHistory);
+    }
+    
     setBoard(newBoard);
-    addMove(index, currentPlayer, newBoard);
     triggerVibration();
     soundManager.playMove();
 
-    // Check for winner
+    // Check for winner (using the new board state)
     const gameWinner = gameLogic3x3.checkWinner(newBoard);
     if (gameWinner) {
       const line = gameLogic3x3.getWinningLine(newBoard);
@@ -89,8 +120,8 @@ export default function Game3x3Screen() {
       return;
     }
 
-    // Check for draw
-    if (gameLogic3x3.checkDraw(newBoard)) {
+    // Check for draw - in disappearing mode, game rarely ends in draw
+    if (gameVariant === 'classic' && gameLogic3x3.checkDraw(newBoard)) {
       setIsDraw(true);
       updateScore('draw');
       soundManager.playDraw();
@@ -102,22 +133,28 @@ export default function Game3x3Screen() {
   };
 
   const handleUndo = () => {
+    if (!canUndo || winner || isDraw) return;
+    
     const lastMove = undoLastMove();
     if (!lastMove) return;
 
-    // Get the previous board state (before the last move)
-    const previousMove = undoLastMove();
+    const currentHistory = getMoveHistory();
+    let newBoard = gameLogic3x3.createEmptyBoard();
     
-    if (previousMove) {
-      setBoard(previousMove.boardState);
-      setCurrentPlayer(previousMove.player === 'X' ? 'O' : 'X');
-      addMove(previousMove.index, previousMove.player, previousMove.boardState);
-    } else {
-      // If no previous move, reset to empty board
-      setBoard(gameLogic3x3.createEmptyBoard());
-      setCurrentPlayer('X');
+    // Rebuild board from remaining history
+    currentHistory.forEach(move => {
+      newBoard[move.index] = move.player;
+    });
+    
+    // Apply disappearing mode if needed
+    if (gameVariant === 'disappearing') {
+      newBoard = applyDisappearingMode(newBoard, currentHistory);
     }
-
+    
+    setBoard(newBoard);
+    
+    // Set current player to the one who made the undone move
+    setCurrentPlayer(lastMove.player);
     setWinner(null);
     setWinningLine([]);
     setIsDraw(false);
@@ -133,8 +170,9 @@ export default function Game3x3Screen() {
     clearHistory();
   };
 
-  const handleModeSelection = (mode: MultiplayerMode, diff?: Difficulty) => {
+  const handleModeSelection = (mode: MultiplayerMode, variant: GameVariant, diff?: Difficulty) => {
     setGameMode(mode);
+    setGameVariant(variant);
     if (diff) setDifficulty(diff);
     setShowModeSelector(false);
     resetGame();
@@ -151,6 +189,8 @@ export default function Game3x3Screen() {
     if (isAIThinking) return 'AI is thinking...';
     return `Player ${currentPlayer}'s Turn`;
   };
+
+  const getMoveHistory = getMoveHistory;
 
   return (
     <SafeAreaView style={styles.container}>
@@ -176,41 +216,100 @@ export default function Game3x3Screen() {
           <Animatable.View animation="zoomIn" style={styles.modeSelector}>
             <Text style={styles.modeSelectorTitle}>Select Game Mode</Text>
 
-            <TouchableOpacity
-              style={styles.modeButton}
-              onPress={() => handleModeSelection('local')}
-            >
-              <Ionicons name="people" size={32} color={COLORS.secondary} />
-              <Text style={styles.modeButtonText}>Player vs Player</Text>
-              <Text style={styles.modeButtonSubtext}>Local multiplayer</Text>
-            </TouchableOpacity>
+            {/* Game Variant Selection */}
+            <View style={styles.variantSection}>
+              <Text style={styles.variantTitle}>Game Type</Text>
+              <View style={styles.variantButtons}>
+                <TouchableOpacity
+                  style={[styles.variantButton, styles.classicVariant]}
+                  onPress={() => {}}
+                >
+                  <Ionicons name="grid-outline" size={24} color={COLORS.secondary} />
+                  <Text style={styles.variantButtonText}>Classic</Text>
+                  <Text style={styles.variantSubtext}>Standard rules</Text>
+                </TouchableOpacity>
+                
+                <TouchableOpacity
+                  style={[styles.variantButton, styles.disappearingVariant]}
+                  onPress={() => {}}
+                >
+                  <Ionicons name="hourglass-outline" size={24} color={COLORS.accent} />
+                  <Text style={styles.variantButtonText}>Disappearing</Text>
+                  <Text style={styles.variantSubtext}>Last 6 moves only</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
 
-            <View style={styles.aiSection}>
-              <Text style={styles.aiSectionTitle}>Player vs AI</Text>
+            {/* Classic Mode Options */}
+            <View style={styles.modeSection}>
+              <Text style={styles.modeSectionTitle}>Classic Mode</Text>
               
               <TouchableOpacity
-                style={[styles.modeButton, styles.difficultyButton]}
-                onPress={() => handleModeSelection('ai', 'easy')}
+                style={styles.modeButton}
+                onPress={() => handleModeSelection('local', 'classic')}
               >
-                <Text style={styles.difficultyButtonText}>Easy</Text>
-                <Text style={styles.difficultySubtext}>Good for beginners</Text>
+                <Ionicons name="people" size={28} color={COLORS.secondary} />
+                <Text style={styles.modeButtonText}>Player vs Player</Text>
               </TouchableOpacity>
 
+              <View style={styles.aiButtons}>
+                <TouchableOpacity
+                  style={styles.aiButton}
+                  onPress={() => handleModeSelection('ai', 'classic', 'easy')}
+                >
+                  <Text style={styles.aiButtonText}>vs AI (Easy)</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={styles.aiButton}
+                  onPress={() => handleModeSelection('ai', 'classic', 'medium')}
+                >
+                  <Text style={styles.aiButtonText}>vs AI (Medium)</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={styles.aiButton}
+                  onPress={() => handleModeSelection('ai', 'classic', 'hard')}
+                >
+                  <Text style={styles.aiButtonText}>vs AI (Hard)</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+
+            {/* Disappearing Mode Options */}
+            <View style={styles.modeSection}>
+              <Text style={styles.modeSectionTitle}>Disappearing Mode</Text>
+              
               <TouchableOpacity
-                style={[styles.modeButton, styles.difficultyButton]}
-                onPress={() => handleModeSelection('ai', 'medium')}
+                style={[styles.modeButton, styles.disappearingModeButton]}
+                onPress={() => handleModeSelection('local', 'disappearing')}
               >
-                <Text style={styles.difficultyButtonText}>Medium</Text>
-                <Text style={styles.difficultySubtext}>Challenging</Text>
+                <Ionicons name="people" size={28} color={COLORS.accent} />
+                <Text style={styles.modeButtonText}>Player vs Player</Text>
               </TouchableOpacity>
 
-              <TouchableOpacity
-                style={[styles.modeButton, styles.difficultyButton]}
-                onPress={() => handleModeSelection('ai', 'hard')}
-              >
-                <Text style={styles.difficultyButtonText}>Hard</Text>
-                <Text style={styles.difficultySubtext}>Unbeatable AI</Text>
-              </TouchableOpacity>
+              <View style={styles.aiButtons}>
+                <TouchableOpacity
+                  style={[styles.aiButton, styles.disappearingAiButton]}
+                  onPress={() => handleModeSelection('ai', 'disappearing', 'easy')}
+                >
+                  <Text style={styles.aiButtonText}>vs AI (Easy)</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[styles.aiButton, styles.disappearingAiButton]}
+                  onPress={() => handleModeSelection('ai', 'disappearing', 'medium')}
+                >
+                  <Text style={styles.aiButtonText}>vs AI (Medium)</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[styles.aiButton, styles.disappearingAiButton]}
+                  onPress={() => handleModeSelection('ai', 'disappearing', 'hard')}
+                >
+                  <Text style={styles.aiButtonText}>vs AI (Hard)</Text>
+                </TouchableOpacity>
+              </View>
             </View>
           </Animatable.View>
         </View>
@@ -221,17 +320,16 @@ export default function Game3x3Screen() {
           {/* Score Display */}
           <ScoreDisplay />
 
-          {/* Game Options */}
-          <View style={styles.optionsContainer}>
-            <View style={styles.optionRow}>
-              <Text style={styles.optionLabel}>Disappearing Mode</Text>
-              <Switch
-                value={disappearingMode}
-                onValueChange={setDisappearingMode}
-                trackColor={{ false: COLORS.border, true: COLORS.secondary }}
-                thumbColor={COLORS.cardBg}
-              />
-            </View>
+          {/* Game Mode Indicator */}
+          <View style={styles.gameModeIndicator}>
+            <Ionicons 
+              name={gameVariant === 'classic' ? 'grid-outline' : 'hourglass-outline'} 
+              size={20} 
+              color={gameVariant === 'classic' ? COLORS.secondary : COLORS.accent} 
+            />
+            <Text style={styles.gameModeText}>
+              {gameVariant === 'classic' ? 'Classic Mode' : 'Disappearing Mode (Last 6 moves)'}
+            </Text>
           </View>
 
           {/* Status */}
@@ -246,7 +344,6 @@ export default function Game3x3Screen() {
               onCellPress={handleCellPress}
               disabled={winner !== null || isDraw || isAIThinking}
               winningLine={winningLine}
-              disappearingMode={disappearingMode}
             />
           </View>
 
@@ -277,11 +374,11 @@ export default function Game3x3Screen() {
           {/* Game Info */}
           <View style={styles.gameInfo}>
             <Text style={styles.gameInfoText}>
-              Mode: {gameMode === 'local' ? 'Player vs Player' : `AI (${difficulty})`}
+              {gameMode === 'local' ? 'Player vs Player' : `vs AI (${difficulty})`}
             </Text>
-            {disappearingMode && (
-              <Text style={styles.gameInfoText}>Disappearing Mode Active</Text>
-            )}
+            <Text style={styles.gameInfoText}>
+              Moves: {getMoveHistory().length}
+            </Text>
           </View>
         </ScrollView>
       )}
@@ -321,22 +418,20 @@ const styles = StyleSheet.create({
     paddingVertical: 24,
     alignItems: 'center',
   },
-  optionsContainer: {
-    width: '100%',
-    backgroundColor: COLORS.cardBg,
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 16,
-  },
-  optionRow: {
+  gameModeIndicator: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
+    backgroundColor: COLORS.cardBg,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 20,
+    marginBottom: 16,
+    gap: 8,
   },
-  optionLabel: {
-    fontSize: FONTS.sizes.medium,
+  gameModeText: {
+    fontSize: FONTS.sizes.small,
     color: COLORS.text,
-    fontWeight: '500',
+    fontWeight: '600',
   },
   statusText: {
     fontSize: FONTS.sizes.xlarge,
@@ -425,65 +520,112 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.7)',
     justifyContent: 'center',
-    alignItems: 'center',
     padding: 20,
   },
   modeSelector: {
     backgroundColor: COLORS.cardBg,
     borderRadius: 20,
     padding: 24,
-    width: '100%',
-    maxWidth: 400,
+    maxHeight: '90%',
   },
   modeSelectorTitle: {
     fontSize: FONTS.sizes.xlarge,
     fontWeight: 'bold',
     color: COLORS.text,
-    marginBottom: 24,
+    marginBottom: 20,
     textAlign: 'center',
   },
-  modeButton: {
+  variantSection: {
+    marginBottom: 20,
+  },
+  variantTitle: {
+    fontSize: FONTS.sizes.medium,
+    fontWeight: '600',
+    color: COLORS.textLight,
+    marginBottom: 12,
+    textAlign: 'center',
+  },
+  variantButtons: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  variantButton: {
+    flex: 1,
     backgroundColor: COLORS.background,
     borderRadius: 12,
-    padding: 20,
+    padding: 16,
     alignItems: 'center',
-    marginBottom: 12,
     borderWidth: 2,
-    borderColor: COLORS.border,
   },
-  modeButtonText: {
-    fontSize: FONTS.sizes.large,
+  classicVariant: {
+    borderColor: COLORS.secondary,
+  },
+  disappearingVariant: {
+    borderColor: COLORS.accent,
+  },
+  variantButtonText: {
+    fontSize: FONTS.sizes.medium,
     fontWeight: '600',
     color: COLORS.text,
     marginTop: 8,
   },
-  modeButtonSubtext: {
+  variantSubtext: {
     fontSize: FONTS.sizes.small,
     color: COLORS.textLight,
     marginTop: 4,
   },
-  aiSection: {
-    marginTop: 12,
+  modeSection: {
+    marginTop: 16,
+    paddingTop: 16,
+    borderTopWidth: 1,
+    borderTopColor: COLORS.border,
   },
-  aiSectionTitle: {
+  modeSectionTitle: {
     fontSize: FONTS.sizes.medium,
     fontWeight: '600',
-    color: COLORS.textLight,
+    color: COLORS.text,
     marginBottom: 12,
-    textAlign: 'center',
   },
-  difficultyButton: {
+  modeButton: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
+    backgroundColor: COLORS.background,
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 8,
+    gap: 12,
+    borderWidth: 2,
+    borderColor: COLORS.secondary,
   },
-  difficultyButtonText: {
+  disappearingModeButton: {
+    borderColor: COLORS.accent,
+  },
+  modeButtonText: {
     fontSize: FONTS.sizes.medium,
     fontWeight: '600',
     color: COLORS.text,
   },
-  difficultySubtext: {
+  aiButtons: {
+    flexDirection: 'row',
+    gap: 8,
+    marginTop: 8,
+  },
+  aiButton: {
+    flex: 1,
+    backgroundColor: COLORS.background,
+    borderRadius: 8,
+    paddingVertical: 12,
+    paddingHorizontal: 8,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: COLORS.secondary,
+  },
+  disappearingAiButton: {
+    borderColor: COLORS.accent,
+  },
+  aiButtonText: {
     fontSize: FONTS.sizes.small,
-    color: COLORS.textLight,
+    fontWeight: '600',
+    color: COLORS.text,
   },
 });
