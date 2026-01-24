@@ -98,6 +98,19 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({ visible, onClose
                   thumbColor={COLORS.cardBg}
                 />
               </View>
+
+              <View style={styles.settingRow}>
+                <View style={styles.settingInfo}>
+                  <Ionicons name="arrow-undo" size={24} color={COLORS.secondary} />
+                  <Text style={styles.settingLabel}>Show Undo Button</Text>
+                </View>
+                <Switch
+                  value={showReplayButton}
+                  onValueChange={toggleShowReplayButton}
+                  trackColor={{ false: COLORS.border, true: COLORS.secondary }}
+                  thumbColor={COLORS.cardBg}
+                />
+              </View>
             </View>
 
             <View style={styles.section}>
