@@ -23,9 +23,11 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({ visible, onClose
     soundEnabled,
     vibrationEnabled,
     showScore,
+    showReplayButton,
     toggleSound,
     toggleVibration,
     toggleShowScore,
+    toggleShowReplayButton,
     resetScore,
   } = useSettingsStore();
 
