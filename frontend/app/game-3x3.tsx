@@ -208,9 +208,14 @@ export default function Game3x3Screen() {
       </View>
 
       {/* Mode Selection Modal */}
-      <Modal visible={showModeSelector} animationType="fade" transparent={true}>
-        <View style={styles.modalOverlay}>
-          <Animatable.View animation="zoomIn" style={styles.modeSelector}>
+      <Modal visible={showModeSelector} animationType="fade" transparent={true} onRequestClose={handleBackToMenu}>
+        <TouchableOpacity 
+          style={styles.modalOverlay} 
+          activeOpacity={1} 
+          onPress={handleBackToMenu}
+        >
+          <TouchableOpacity activeOpacity={1} onPress={(e) => e.stopPropagation()}>
+            <Animatable.View animation="zoomIn" style={styles.modeSelector}>
             <Text style={styles.modeSelectorTitle}>Select Game Mode</Text>
 
             {/* Top Tab Switcher */}
