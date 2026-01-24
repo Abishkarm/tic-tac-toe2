@@ -215,42 +215,48 @@ export default function Game9x9Ultimate() {
       </View>
 
       {/* Mode Selector */}
-      <Modal visible={showModeSelector} animationType="fade" transparent>
-        <View style={styles.modalOverlay}>
-          <Animatable.View animation="zoomIn" style={styles.modeModal}>
-            <Text style={styles.modeTitle}>Select Mode</Text>
+      <Modal visible={showModeSelector} animationType="fade" transparent onRequestClose={() => setShowModeSelector(false)}>
+        <TouchableOpacity 
+          style={styles.modalOverlay} 
+          activeOpacity={1} 
+          onPress={() => setShowModeSelector(false)}
+        >
+          <TouchableOpacity activeOpacity={1} onPress={(e) => e.stopPropagation()}>
+            <Animatable.View animation="zoomIn" style={styles.modeModal}>
+              <Text style={styles.modeTitle}>Select Mode</Text>
 
-            <TouchableOpacity
-              style={styles.modeOption}
-              onPress={() => startGame('pvp')}
-            >
-              <Ionicons name="people" size={32} color={COLORS.secondary} />
-              <Text style={styles.modeOptionText}>Player vs Player</Text>
-            </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.modeOption}
+                onPress={() => startGame('pvp')}
+              >
+                <Ionicons name="people" size={32} color={COLORS.secondary} />
+                <Text style={styles.modeOptionText}>Player vs Player</Text>
+              </TouchableOpacity>
 
-            <Text style={styles.aiLabel}>Player vs AI</Text>
-            <View style={styles.aiOptions}>
-              <TouchableOpacity
-                style={styles.aiButton}
-                onPress={() => startGame('ai', 'easy')}
-              >
-                <Text style={styles.aiButtonText}>Easy</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.aiButton}
-                onPress={() => startGame('ai', 'medium')}
-              >
-                <Text style={styles.aiButtonText}>Medium</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.aiButton}
-                onPress={() => startGame('ai', 'hard')}
-              >
-                <Text style={styles.aiButtonText}>Hard</Text>
-              </TouchableOpacity>
-            </View>
-          </Animatable.View>
-        </View>
+              <Text style={styles.aiLabel}>Player vs AI</Text>
+              <View style={styles.aiOptions}>
+                <TouchableOpacity
+                  style={styles.aiButton}
+                  onPress={() => startGame('ai', 'easy')}
+                >
+                  <Text style={styles.aiButtonText}>Easy</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.aiButton}
+                  onPress={() => startGame('ai', 'medium')}
+                >
+                  <Text style={styles.aiButtonText}>Medium</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.aiButton}
+                  onPress={() => startGame('ai', 'hard')}
+                >
+                  <Text style={styles.aiButtonText}>Hard</Text>
+                </TouchableOpacity>
+              </View>
+            </Animatable.View>
+          </TouchableOpacity>
+        </TouchableOpacity>
       </Modal>
 
       {/* Game Screen */}
