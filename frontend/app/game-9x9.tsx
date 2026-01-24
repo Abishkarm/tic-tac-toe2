@@ -82,7 +82,7 @@ export default function Game9x9Screen() {
     }
 
     // Set next active board
-    const nextActiveBoard = gameLogic9x9.getNextActiveBoard(cellIndex, newSmallBoards);
+    const nextActiveBoard = gameLogic9x9.getNextActiveBoard(cellIndex, newSmallBoards, newBoard);
     setActiveBoard(nextActiveBoard);
 
     // Switch player
