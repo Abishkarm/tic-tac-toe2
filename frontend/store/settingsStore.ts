@@ -79,6 +79,19 @@ export const useSettingsStore = create<SettingsStore>((set, get) => ({
     });
   },
 
+  toggleShowReplayButton: () => {
+    set((state) => {
+      const newValue = !state.showReplayButton;
+      storage.saveSettings({
+        soundEnabled: state.soundEnabled,
+        vibrationEnabled: state.vibrationEnabled,
+        showScore: state.showScore,
+        lastPage: state.lastPage,
+      });
+      return { showReplayButton: newValue };
+    });
+  },
+
   setLastPage: (page: string) => {
     set({ lastPage: page });
     storage.saveLastPage(page);
