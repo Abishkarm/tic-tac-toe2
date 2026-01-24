@@ -6,7 +6,7 @@ export const gameLogic3x3 = {
     return Array(9).fill(null);
   },
 
-  checkWinner(board: Board3x3): Player {
+  getWinningLine(board: Board3x3): number[] | null {
     const winPatterns = [
       [0, 1, 2], [3, 4, 5], [6, 7, 8], // Rows
       [0, 3, 6], [1, 4, 7], [2, 5, 8], // Columns
@@ -16,10 +16,15 @@ export const gameLogic3x3 = {
     for (const pattern of winPatterns) {
       const [a, b, c] = pattern;
       if (board[a] && board[a] === board[b] && board[a] === board[c]) {
-        return board[a];
+        return pattern;
       }
     }
     return null;
+  },
+
+  checkWinner(board: Board3x3): Player {
+    const winningLine = this.getWinningLine(board);
+    return winningLine ? board[winningLine[0]] : null;
   },
 
   checkDraw(board: Board3x3): boolean {
