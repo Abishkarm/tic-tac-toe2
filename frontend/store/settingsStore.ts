@@ -31,6 +31,7 @@ export const useSettingsStore = create<SettingsStore>((set, get) => ({
   soundEnabled: false,
   vibrationEnabled: false,
   showScore: true,
+  showReplayButton: true,
   lastPage: '/game-3x3',
   
   score: {
