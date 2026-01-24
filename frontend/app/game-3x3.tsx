@@ -190,8 +190,6 @@ export default function Game3x3Screen() {
     return `Player ${currentPlayer}'s Turn`;
   };
 
-  const getMoveHistory = getMoveHistory;
-
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor={COLORS.background} />
