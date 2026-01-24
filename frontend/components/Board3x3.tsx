@@ -9,7 +9,6 @@ interface Board3x3Props {
   onCellPress: (index: number) => void;
   disabled?: boolean;
   winningLine?: number[];
-  disappearingMode?: boolean;
 }
 
 export const Board3x3Component: React.FC<Board3x3Props> = ({
@@ -17,7 +16,6 @@ export const Board3x3Component: React.FC<Board3x3Props> = ({
   onCellPress,
   disabled = false,
   winningLine = [],
-  disappearingMode = false,
 }) => {
   return (
     <View style={styles.container}>
@@ -30,7 +28,6 @@ export const Board3x3Component: React.FC<Board3x3Props> = ({
             disabled={disabled}
             size={SIZES.cellSize}
             isWinningCell={winningLine.includes(index)}
-            disappearingMode={disappearingMode}
           />
         ))}
       </View>
