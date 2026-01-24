@@ -20,18 +20,18 @@ export const Cell: React.FC<CellProps> = ({
   size = SIZES.cellSize,
   isWinningCell = false,
 }) => {
+  // For 9x9, use calculated size
   const cellStyle: ViewStyle = {
     width: size,
     height: size,
-    backgroundColor: isWinningCell ? COLORS.winnerGlow : COLORS.cellDefault,
-    borderWidth: SIZES.borderWidth,
-    borderColor: COLORS.border,
+    backgroundColor: isWinningCell ? '#fef3c7' : '#ffffff',
+    borderRadius: size === SIZES.cellSize9x9 ? 6 : 8,
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: 8,
   };
 
   const iconSize = size * 0.6;
+  const iconColor = '#ef4444'; // Red color from reference
 
   return (
     <TouchableOpacity
@@ -42,12 +42,12 @@ export const Cell: React.FC<CellProps> = ({
     >
       {value === 'X' && (
         <Animatable.View animation="zoomIn" duration={300}>
-          <Ionicons name="close" size={iconSize} color={COLORS.playerX} />
+          <Ionicons name="close" size={iconSize} color={iconColor} />
         </Animatable.View>
       )}
       {value === 'O' && (
         <Animatable.View animation="zoomIn" duration={300}>
-          <Ionicons name="ellipse-outline" size={iconSize} color={COLORS.playerO} />
+          <Ionicons name="ellipse-outline" size={iconSize} color={iconColor} />
         </Animatable.View>
       )}
     </TouchableOpacity>
