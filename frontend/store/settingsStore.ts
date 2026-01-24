@@ -8,6 +8,7 @@ interface SettingsStore {
   soundEnabled: boolean;
   vibrationEnabled: boolean;
   showScore: boolean;
+  showReplayButton: boolean;
   lastPage: string;
   
   // Score
@@ -17,6 +18,7 @@ interface SettingsStore {
   toggleSound: () => void;
   toggleVibration: () => void;
   toggleShowScore: () => void;
+  toggleShowReplayButton: () => void;
   setLastPage: (page: string) => void;
   updateScore: (winner: 'X' | 'O' | 'draw') => void;
   resetScore: () => void;
