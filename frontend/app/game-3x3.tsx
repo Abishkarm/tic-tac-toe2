@@ -41,6 +41,7 @@ export default function Game3x3Screen() {
   const [difficulty, setDifficulty] = useState<Difficulty>('hard');
   const [showModeSelector, setShowModeSelector] = useState(true);
   const [isAIThinking, setIsAIThinking] = useState(false);
+  const [modeSelectorTab, setModeSelectorTab] = useState<'pvp' | 'ai'>('pvp');
 
   useEffect(() => {
     setLastPage('/game-3x3');
@@ -108,7 +109,7 @@ export default function Game3x3Screen() {
     triggerVibration();
     soundManager.playMove();
 
-    // Check for winner (using the new board state)
+    // Check for winner
     const gameWinner = gameLogic3x3.checkWinner(newBoard);
     if (gameWinner) {
       const line = gameLogic3x3.getWinningLine(newBoard);
@@ -120,7 +121,7 @@ export default function Game3x3Screen() {
       return;
     }
 
-    // Check for draw - in disappearing mode, game rarely ends in draw
+    // Check for draw
     if (gameVariant === 'classic' && gameLogic3x3.checkDraw(newBoard)) {
       setIsDraw(true);
       updateScore('draw');
@@ -152,8 +153,6 @@ export default function Game3x3Screen() {
     }
     
     setBoard(newBoard);
-    
-    // Set current player to the one who made the undone move
     setCurrentPlayer(lastMove.player);
     setWinner(null);
     setWinningLine([]);
@@ -214,101 +213,127 @@ export default function Game3x3Screen() {
           <Animatable.View animation="zoomIn" style={styles.modeSelector}>
             <Text style={styles.modeSelectorTitle}>Select Game Mode</Text>
 
-            {/* Game Variant Selection */}
-            <View style={styles.variantSection}>
-              <Text style={styles.variantTitle}>Game Type</Text>
-              <View style={styles.variantButtons}>
-                <TouchableOpacity
-                  style={[styles.variantButton, styles.classicVariant]}
-                  onPress={() => {}}
-                >
-                  <Ionicons name="grid-outline" size={24} color={COLORS.secondary} />
-                  <Text style={styles.variantButtonText}>Classic</Text>
-                  <Text style={styles.variantSubtext}>Standard rules</Text>
-                </TouchableOpacity>
-                
-                <TouchableOpacity
-                  style={[styles.variantButton, styles.disappearingVariant]}
-                  onPress={() => {}}
-                >
-                  <Ionicons name="hourglass-outline" size={24} color={COLORS.accent} />
-                  <Text style={styles.variantButtonText}>Disappearing</Text>
-                  <Text style={styles.variantSubtext}>Last 6 moves only</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-
-            {/* Classic Mode Options */}
-            <View style={styles.modeSection}>
-              <Text style={styles.modeSectionTitle}>Classic Mode</Text>
-              
+            {/* Top Tab Switcher */}
+            <View style={styles.tabSwitcher}>
               <TouchableOpacity
-                style={styles.modeButton}
-                onPress={() => handleModeSelection('local', 'classic')}
+                style={[styles.tab, modeSelectorTab === 'pvp' && styles.tabActive]}
+                onPress={() => setModeSelectorTab('pvp')}
               >
-                <Ionicons name="people" size={28} color={COLORS.secondary} />
-                <Text style={styles.modeButtonText}>Player vs Player</Text>
+                <Ionicons 
+                  name="people" 
+                  size={24} 
+                  color={modeSelectorTab === 'pvp' ? COLORS.cardBg : COLORS.text} 
+                />
+                <Text style={[styles.tabText, modeSelectorTab === 'pvp' && styles.tabTextActive]}>
+                  PvP
+                </Text>
               </TouchableOpacity>
 
-              <View style={styles.aiButtons}>
-                <TouchableOpacity
-                  style={styles.aiButton}
-                  onPress={() => handleModeSelection('ai', 'classic', 'easy')}
-                >
-                  <Text style={styles.aiButtonText}>vs AI (Easy)</Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  style={styles.aiButton}
-                  onPress={() => handleModeSelection('ai', 'classic', 'medium')}
-                >
-                  <Text style={styles.aiButtonText}>vs AI (Medium)</Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  style={styles.aiButton}
-                  onPress={() => handleModeSelection('ai', 'classic', 'hard')}
-                >
-                  <Text style={styles.aiButtonText}>vs AI (Hard)</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-
-            {/* Disappearing Mode Options */}
-            <View style={styles.modeSection}>
-              <Text style={styles.modeSectionTitle}>Disappearing Mode</Text>
-              
               <TouchableOpacity
-                style={[styles.modeButton, styles.disappearingModeButton]}
-                onPress={() => handleModeSelection('local', 'disappearing')}
+                style={[styles.tab, modeSelectorTab === 'ai' && styles.tabActive]}
+                onPress={() => setModeSelectorTab('ai')}
               >
-                <Ionicons name="people" size={28} color={COLORS.accent} />
-                <Text style={styles.modeButtonText}>Player vs Player</Text>
+                <Ionicons 
+                  name="phone-portrait" 
+                  size={24} 
+                  color={modeSelectorTab === 'ai' ? COLORS.cardBg : COLORS.text} 
+                />
+                <Text style={[styles.tabText, modeSelectorTab === 'ai' && styles.tabTextActive]}>
+                  Player vs AI
+                </Text>
               </TouchableOpacity>
-
-              <View style={styles.aiButtons}>
-                <TouchableOpacity
-                  style={[styles.aiButton, styles.disappearingAiButton]}
-                  onPress={() => handleModeSelection('ai', 'disappearing', 'easy')}
-                >
-                  <Text style={styles.aiButtonText}>vs AI (Easy)</Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  style={[styles.aiButton, styles.disappearingAiButton]}
-                  onPress={() => handleModeSelection('ai', 'disappearing', 'medium')}
-                >
-                  <Text style={styles.aiButtonText}>vs AI (Medium)</Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  style={[styles.aiButton, styles.disappearingAiButton]}
-                  onPress={() => handleModeSelection('ai', 'disappearing', 'hard')}
-                >
-                  <Text style={styles.aiButtonText}>vs AI (Hard)</Text>
-                </TouchableOpacity>
-              </View>
             </View>
+
+            {/* PvP Section */}
+            {modeSelectorTab === 'pvp' && (
+              <Animatable.View animation="fadeIn" style={styles.tabContent}>
+                <TouchableOpacity
+                  style={styles.modeCard}
+                  onPress={() => handleModeSelection('local', 'classic')}
+                >
+                  <Ionicons name="grid-outline" size={40} color={COLORS.secondary} />
+                  <Text style={styles.modeCardTitle}>Classic</Text>
+                  <Text style={styles.modeCardSubtitle}>Standard rules</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={styles.modeCard}
+                  onPress={() => handleModeSelection('local', 'disappearing')}
+                >
+                  <Ionicons name="hourglass-outline" size={40} color={COLORS.accent} />
+                  <Text style={styles.modeCardTitle}>Disappearing</Text>
+                  <Text style={styles.modeCardSubtitle}>Last 6 moves only</Text>
+                </TouchableOpacity>
+              </Animatable.View>
+            )}
+
+            {/* Player vs AI Section */}
+            {modeSelectorTab === 'ai' && (
+              <Animatable.View animation="fadeIn" style={styles.tabContent}>
+                {/* Easy */}
+                <View style={styles.aiRow}>
+                  <Text style={styles.aiRowLabel}>Easy</Text>
+                  <View style={styles.aiRowButtons}>
+                    <TouchableOpacity
+                      style={styles.variantButton}
+                      onPress={() => handleModeSelection('ai', 'classic', 'easy')}
+                    >
+                      <Ionicons name="grid-outline" size={20} color={COLORS.secondary} />
+                      <Text style={styles.variantButtonText}>Classic</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={styles.variantButton}
+                      onPress={() => handleModeSelection('ai', 'disappearing', 'easy')}
+                    >
+                      <Ionicons name="hourglass-outline" size={20} color={COLORS.accent} />
+                      <Text style={styles.variantButtonText}>Disappearing</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+
+                {/* Medium */}
+                <View style={styles.aiRow}>
+                  <Text style={styles.aiRowLabel}>Medium</Text>
+                  <View style={styles.aiRowButtons}>
+                    <TouchableOpacity
+                      style={styles.variantButton}
+                      onPress={() => handleModeSelection('ai', 'classic', 'medium')}
+                    >
+                      <Ionicons name="grid-outline" size={20} color={COLORS.secondary} />
+                      <Text style={styles.variantButtonText}>Classic</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={styles.variantButton}
+                      onPress={() => handleModeSelection('ai', 'disappearing', 'medium')}
+                    >
+                      <Ionicons name="hourglass-outline" size={20} color={COLORS.accent} />
+                      <Text style={styles.variantButtonText}>Disappearing</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+
+                {/* Hard */}
+                <View style={styles.aiRow}>
+                  <Text style={styles.aiRowLabel}>Hard</Text>
+                  <View style={styles.aiRowButtons}>
+                    <TouchableOpacity
+                      style={styles.variantButton}
+                      onPress={() => handleModeSelection('ai', 'classic', 'hard')}
+                    >
+                      <Ionicons name="grid-outline" size={20} color={COLORS.secondary} />
+                      <Text style={styles.variantButtonText}>Classic</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={styles.variantButton}
+                      onPress={() => handleModeSelection('ai', 'disappearing', 'hard')}
+                    >
+                      <Ionicons name="hourglass-outline" size={20} color={COLORS.accent} />
+                      <Text style={styles.variantButtonText}>Disappearing</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              </Animatable.View>
+            )}
           </Animatable.View>
         </View>
       </Modal>
@@ -326,8 +351,11 @@ export default function Game3x3Screen() {
               color={gameVariant === 'classic' ? COLORS.secondary : COLORS.accent} 
             />
             <Text style={styles.gameModeText}>
-              {gameVariant === 'classic' ? 'Classic Mode' : 'Disappearing Mode (Last 6 moves)'}
+              {gameVariant === 'classic' ? 'Classic Mode' : 'Disappearing Mode'}
             </Text>
+            {gameMode === 'ai' && (
+              <Text style={styles.difficultyBadge}>{difficulty.toUpperCase()}</Text>
+            )}
           </View>
 
           {/* Status */}
@@ -431,6 +459,12 @@ const styles = StyleSheet.create({
     color: COLORS.text,
     fontWeight: '600',
   },
+  difficultyBadge: {
+    fontSize: FONTS.sizes.small,
+    color: COLORS.warning,
+    fontWeight: 'bold',
+    marginLeft: 4,
+  },
   statusText: {
     fontSize: FONTS.sizes.xlarge,
     fontWeight: 'bold',
@@ -524,7 +558,7 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.cardBg,
     borderRadius: 20,
     padding: 24,
-    maxHeight: '90%',
+    maxHeight: '80%',
   },
   modeSelectorTitle: {
     fontSize: FONTS.sizes.xlarge,
@@ -533,95 +567,86 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     textAlign: 'center',
   },
-  variantSection: {
+  tabSwitcher: {
+    flexDirection: 'row',
+    backgroundColor: COLORS.background,
+    borderRadius: 12,
+    padding: 4,
     marginBottom: 20,
+    gap: 8,
   },
-  variantTitle: {
+  tab: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    gap: 8,
+  },
+  tabActive: {
+    backgroundColor: COLORS.secondary,
+  },
+  tabText: {
     fontSize: FONTS.sizes.medium,
     fontWeight: '600',
-    color: COLORS.textLight,
-    marginBottom: 12,
-    textAlign: 'center',
+    color: COLORS.text,
   },
-  variantButtons: {
+  tabTextActive: {
+    color: COLORS.cardBg,
+  },
+  tabContent: {
+    gap: 16,
+  },
+  modeCard: {
+    backgroundColor: COLORS.background,
+    borderRadius: 16,
+    padding: 24,
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: COLORS.border,
+  },
+  modeCardTitle: {
+    fontSize: FONTS.sizes.large,
+    fontWeight: 'bold',
+    color: COLORS.text,
+    marginTop: 12,
+  },
+  modeCardSubtitle: {
+    fontSize: FONTS.sizes.small,
+    color: COLORS.textLight,
+    marginTop: 4,
+  },
+  aiRow: {
+    backgroundColor: COLORS.background,
+    borderRadius: 12,
+    padding: 16,
+  },
+  aiRowLabel: {
+    fontSize: FONTS.sizes.medium,
+    fontWeight: '600',
+    color: COLORS.text,
+    marginBottom: 12,
+  },
+  aiRowButtons: {
     flexDirection: 'row',
     gap: 12,
   },
   variantButton: {
     flex: 1,
-    backgroundColor: COLORS.background,
-    borderRadius: 12,
-    padding: 16,
+    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: COLORS.cardBg,
+    paddingVertical: 12,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    gap: 8,
     borderWidth: 2,
-  },
-  classicVariant: {
-    borderColor: COLORS.secondary,
-  },
-  disappearingVariant: {
-    borderColor: COLORS.accent,
+    borderColor: COLORS.border,
   },
   variantButtonText: {
-    fontSize: FONTS.sizes.medium,
-    fontWeight: '600',
-    color: COLORS.text,
-    marginTop: 8,
-  },
-  variantSubtext: {
-    fontSize: FONTS.sizes.small,
-    color: COLORS.textLight,
-    marginTop: 4,
-  },
-  modeSection: {
-    marginTop: 16,
-    paddingTop: 16,
-    borderTopWidth: 1,
-    borderTopColor: COLORS.border,
-  },
-  modeSectionTitle: {
-    fontSize: FONTS.sizes.medium,
-    fontWeight: '600',
-    color: COLORS.text,
-    marginBottom: 12,
-  },
-  modeButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: COLORS.background,
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 8,
-    gap: 12,
-    borderWidth: 2,
-    borderColor: COLORS.secondary,
-  },
-  disappearingModeButton: {
-    borderColor: COLORS.accent,
-  },
-  modeButtonText: {
-    fontSize: FONTS.sizes.medium,
-    fontWeight: '600',
-    color: COLORS.text,
-  },
-  aiButtons: {
-    flexDirection: 'row',
-    gap: 8,
-    marginTop: 8,
-  },
-  aiButton: {
-    flex: 1,
-    backgroundColor: COLORS.background,
-    borderRadius: 8,
-    paddingVertical: 12,
-    paddingHorizontal: 8,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: COLORS.secondary,
-  },
-  disappearingAiButton: {
-    borderColor: COLORS.accent,
-  },
-  aiButtonText: {
     fontSize: FONTS.sizes.small,
     fontWeight: '600',
     color: COLORS.text,
