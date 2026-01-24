@@ -36,13 +36,6 @@ export default function HomeScreen() {
       route: '/game-3x3',
     },
     {
-      icon: 'apps',
-      title: '9x9 Ultimate',
-      subtitle: 'Advanced strategy game',
-      color: COLORS.accent,
-      route: '/game-9x9',
-    },
-    {
       icon: 'globe',
       title: 'Online Multiplayer',
       subtitle: 'Play with friends online',
