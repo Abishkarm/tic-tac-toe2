@@ -389,8 +389,8 @@ const styles = StyleSheet.create({
     padding: 5,
   },
   cell: {
-    width: 33,
-    height: 33,
+    width: 31,
+    height: 31,
     backgroundColor: '#fff',
     borderRadius: 6,
     alignItems: 'center',
