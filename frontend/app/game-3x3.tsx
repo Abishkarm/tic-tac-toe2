@@ -556,15 +556,18 @@ const styles = StyleSheet.create({
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    backgroundColor: 'rgba(0, 0, 0, 0.85)',
     justifyContent: 'center',
+    alignItems: 'center',
     padding: 20,
   },
   modeSelector: {
     backgroundColor: COLORS.cardBg,
     borderRadius: 20,
     padding: 24,
-    maxHeight: '80%',
+    width: '100%',
+    maxWidth: 400,
+    maxHeight: '90%',
   },
   modeSelectorTitle: {
     fontSize: FONTS.sizes.xlarge,
