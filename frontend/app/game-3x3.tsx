@@ -216,7 +216,8 @@ export default function Game3x3Screen() {
         >
           <TouchableOpacity activeOpacity={1} onPress={(e) => e.stopPropagation()}>
             <Animatable.View animation="zoomIn" style={styles.modeSelector}>
-            <Text style={styles.modeSelectorTitle}>Select Game Mode</Text>
+              <ScrollView showsVerticalScrollIndicator={false}>
+                <Text style={styles.modeSelectorTitle}>Select Game Mode</Text>
 
             {/* Top Tab Switcher */}
             <View style={styles.tabSwitcher}>
