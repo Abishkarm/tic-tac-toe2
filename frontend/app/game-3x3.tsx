@@ -566,6 +566,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 20,
   },
+  modalDismissArea: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+  },
   modeSelector: {
     backgroundColor: COLORS.cardBg,
     borderRadius: 20,
@@ -573,6 +580,9 @@ const styles = StyleSheet.create({
     width: '100%',
     maxWidth: 400,
     maxHeight: '80%',
+  },
+  scrollView: {
+    flexGrow: 0,
   },
   scrollContent: {
     flexGrow: 1,
