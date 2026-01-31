@@ -21,11 +21,14 @@ type GameMode = 'pvp' | 'ai';
 type Difficulty = 'easy' | 'medium' | 'hard';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
-const BOARD_SIZE = Math.min(SCREEN_WIDTH - 24, 360); // Total board size
-const GAP = 4; // Small gap between mini-boards (visible line)
-const MINI_BOARD_SIZE = (BOARD_SIZE - GAP * 2 - 16) / 3; // 3 boards with gaps, minus padding
-const CELL_GAP = 2; // Tiny gap between cells
-const CELL_SIZE = (MINI_BOARD_SIZE - 8 - CELL_GAP * 2) / 3; // Bigger cells
+// Fixed sizing for proper 3x3 grid layout
+const BOARD_PADDING = 8;
+const BOARD_SIZE = Math.min(SCREEN_WIDTH - 24, 360);
+const GAP = 4; // Small visible line between mini-boards
+const MINI_BOARD_SIZE = Math.floor((BOARD_SIZE - BOARD_PADDING * 2 - GAP * 2) / 3);
+const CELL_GAP = 2;
+const CELL_PADDING = 4;
+const CELL_SIZE = Math.floor((MINI_BOARD_SIZE - CELL_PADDING * 2 - CELL_GAP * 2) / 3);
 
 // Bright colors for active board highlight
 const ACTIVE_BOARD_COLOR = '#22c55e'; // Bright green
