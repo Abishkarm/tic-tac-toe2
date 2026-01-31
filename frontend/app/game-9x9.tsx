@@ -308,8 +308,7 @@ export default function Game9x9Ultimate() {
                 </TouchableOpacity>
               </View>
             </Animatable.View>
-          </TouchableOpacity>
-        </TouchableOpacity>
+        </View>
       </Modal>
 
       {/* Game Screen */}
