@@ -8,7 +8,7 @@ import {
   StatusBar,
   Modal,
   ScrollView,
-  Alert,
+  Dimensions,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -20,25 +20,39 @@ type Board = CellValue[];
 type GameMode = 'pvp' | 'ai';
 type Difficulty = 'easy' | 'medium' | 'hard';
 
-// Ultimate 9x9 Game Component
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
+const BOARD_SIZE = Math.min(SCREEN_WIDTH - 32, 420); // Max 420px like the HTML
+const GAP = 14;
+const MINI_BOARD_SIZE = (BOARD_SIZE - GAP * 2) / 3;
+const CELL_GAP = 6;
+const CELL_SIZE = (MINI_BOARD_SIZE - 20 - CELL_GAP * 2) / 3; // Account for padding
+
+// Winning combinations
+const WINNING_LINES = [
+  [0, 1, 2], [3, 4, 5], [6, 7, 8], // rows
+  [0, 3, 6], [1, 4, 7], [2, 5, 8], // cols
+  [0, 4, 8], [2, 4, 6], // diagonals
+];
+
 export default function Game9x9Ultimate() {
   const router = useRouter();
 
-  // 9 mini boards (each with 9 cells)
+  // Game state - 9 mini boards, each with 9 cells
   const [boards, setBoards] = useState<Board[]>(
-    Array(9).fill(null).map(() => Array(9).fill(null))
+    Array.from({ length: 9 }, () => Array(9).fill(null))
   );
   
-  // Track which mini boards are won ('X', 'O', or null)
+  // Winner of each mini board
   const [boardWinners, setBoardWinners] = useState<CellValue[]>(Array(9).fill(null));
   
   // Current player
   const [currentPlayer, setCurrentPlayer] = useState<CellValue>('X');
   
-  // Which mini board must be played in (null = any board)
-  const [activeBoard, setActiveBoard] = useState<number | null>(null);
+  // Active board (-1 = any board, 0-8 = specific board)
+  const [activeBoard, setActiveBoard] = useState<number>(-1);
   
-  // Overall game winner
+  // Game state
+  const [gameOver, setGameOver] = useState(false);
   const [gameWinner, setGameWinner] = useState<CellValue>(null);
   
   // UI state
@@ -47,15 +61,9 @@ export default function Game9x9Ultimate() {
   const [difficulty, setDifficulty] = useState<Difficulty>('medium');
   const [isAIThinking, setIsAIThinking] = useState(false);
 
-  // Check if 3 in a row (for mini board or overall game)
+  // Check winner in a board (3 in a row)
   const checkWinner = (cells: CellValue[]): CellValue => {
-    const lines = [
-      [0, 1, 2], [3, 4, 5], [6, 7, 8], // rows
-      [0, 3, 6], [1, 4, 7], [2, 5, 8], // cols
-      [0, 4, 8], [2, 4, 6], // diagonals
-    ];
-
-    for (const [a, b, c] of lines) {
+    for (const [a, b, c] of WINNING_LINES) {
       if (cells[a] && cells[a] === cells[b] && cells[a] === cells[c]) {
         return cells[a];
       }
@@ -63,22 +71,20 @@ export default function Game9x9Ultimate() {
     return null;
   };
 
-  // Check if board is full
+  // Check if board is full (for draw)
   const isBoardFull = (board: Board): boolean => {
     return board.every(cell => cell !== null);
   };
 
-  // AI makes a move
+  // AI move logic
   const makeAIMove = () => {
     const availableMoves: { boardIdx: number; cellIdx: number }[] = [];
 
-    // Find all available moves
     for (let b = 0; b < 9; b++) {
       // Skip won boards
       if (boardWinners[b] !== null) continue;
-      
-      // Skip inactive boards (if activeBoard is set)
-      if (activeBoard !== null && activeBoard !== b) continue;
+      // Skip if not active board (when activeBoard is set)
+      if (activeBoard !== -1 && activeBoard !== b) continue;
 
       for (let c = 0; c < 9; c++) {
         if (boards[b][c] === null) {
@@ -118,7 +124,24 @@ export default function Game9x9Ultimate() {
         }
       }
 
-      // 3. Random if no critical move
+      // 3. For hard mode, also try to win the overall game
+      if (!chosenMove && difficulty === 'hard') {
+        // Try to win a board that would help win the game
+        for (const move of availableMoves) {
+          const testBoard = [...boards[move.boardIdx]];
+          testBoard[move.cellIdx] = 'O';
+          if (checkWinner(testBoard) === 'O') {
+            const newBoardWinners = [...boardWinners];
+            newBoardWinners[move.boardIdx] = 'O';
+            if (checkWinner(newBoardWinners) === 'O') {
+              chosenMove = move;
+              break;
+            }
+          }
+        }
+      }
+
+      // 4. Random if no critical move
       if (!chosenMove) {
         chosenMove = availableMoves[Math.floor(Math.random() * availableMoves.length)];
       }
@@ -131,36 +154,38 @@ export default function Game9x9Ultimate() {
 
   // AI turn effect
   useEffect(() => {
-    if (gameMode === 'ai' && currentPlayer === 'O' && !gameWinner && !showModeSelector) {
+    if (gameMode === 'ai' && currentPlayer === 'O' && !gameOver && !showModeSelector) {
       setIsAIThinking(true);
       setTimeout(() => {
         makeAIMove();
         setIsAIThinking(false);
       }, 600);
     }
-  }, [currentPlayer, gameMode, gameWinner, showModeSelector]);
+  }, [currentPlayer, gameMode, gameOver, showModeSelector]);
 
-  // Handle cell press
+  // Handle cell press - following Ultimate Tic-Tac-Toe rules
   const handleCellPress = (boardIdx: number, cellIdx: number) => {
     // Validation
-    if (gameWinner || isAIThinking) return;
-    if (boardWinners[boardIdx] !== null) return; // Board already won
-    if (boards[boardIdx][cellIdx] !== null) return; // Cell occupied
-    if (activeBoard !== null && activeBoard !== boardIdx) {
-      Alert.alert('Invalid Move', `You must play in board ${activeBoard + 1}`);
-      return;
-    }
+    if (gameOver || isAIThinking) return;
+    // Check if this board can be played
+    if (activeBoard !== -1 && activeBoard !== boardIdx) return;
+    // Check if cell or board already filled/won
+    if (boards[boardIdx][cellIdx] !== null) return;
+    if (boardWinners[boardIdx] !== null) return;
 
-    // Make move
+    // Make the move
     const newBoards = boards.map((board, idx) =>
-      idx === boardIdx ? board.map((cell, i) => (i === cellIdx ? currentPlayer : cell)) : [...board]
+      idx === boardIdx 
+        ? board.map((cell, i) => (i === cellIdx ? currentPlayer : cell)) 
+        : [...board]
     );
     setBoards(newBoards);
 
-    // Check if mini board is won
+    // Check if this mini board is won
     const miniWinner = checkWinner(newBoards[boardIdx]);
+    let newBoardWinners = [...boardWinners];
+    
     if (miniWinner) {
-      const newBoardWinners = [...boardWinners];
       newBoardWinners[boardIdx] = miniWinner;
       setBoardWinners(newBoardWinners);
 
@@ -168,16 +193,18 @@ export default function Game9x9Ultimate() {
       const overallWinner = checkWinner(newBoardWinners);
       if (overallWinner) {
         setGameWinner(overallWinner);
+        setGameOver(true);
         return;
       }
     }
 
-    // Determine next active board
-    const nextBoard = cellIdx;
-    if (boardWinners[nextBoard] !== null || isBoardFull(newBoards[nextBoard])) {
-      setActiveBoard(null); // Any board available
+    // Determine next active board based on the cell that was played
+    // The next board to play is determined by the cell index
+    // If that board is already won, any board can be played
+    if (newBoardWinners[cellIdx] !== null || isBoardFull(newBoards[cellIdx])) {
+      setActiveBoard(-1); // Any board
     } else {
-      setActiveBoard(nextBoard);
+      setActiveBoard(cellIdx);
     }
 
     // Switch player
@@ -186,10 +213,11 @@ export default function Game9x9Ultimate() {
 
   // Reset game
   const resetGame = () => {
-    setBoards(Array(9).fill(null).map(() => Array(9).fill(null)));
+    setBoards(Array.from({ length: 9 }, () => Array(9).fill(null)));
     setBoardWinners(Array(9).fill(null));
     setCurrentPlayer('X');
-    setActiveBoard(null);
+    setActiveBoard(-1);
+    setGameOver(false);
     setGameWinner(null);
   };
 
@@ -201,25 +229,50 @@ export default function Game9x9Ultimate() {
     resetGame();
   };
 
+  // Go back to home
+  const goHome = () => {
+    router.push('/');
+  };
+
+  // Get status text
+  const getStatusText = () => {
+    if (gameWinner) return `🎉 Player ${gameWinner} wins the game!`;
+    if (isAIThinking) return 'AI thinking...';
+    if (activeBoard === -1) return `Player ${currentPlayer}'s turn`;
+    return `Player ${currentPlayer}'s turn - Board ${activeBoard + 1}`;
+  };
+
+  // Check if a mini board is active (can be played)
+  const isMiniBoardActive = (boardIdx: number): boolean => {
+    if (gameOver) return false;
+    if (boardWinners[boardIdx] !== null) return false;
+    return activeBoard === -1 || activeBoard === boardIdx;
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="#2f3b4c" />
 
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.push('/')} style={styles.backButton}>
+        <TouchableOpacity onPress={goHome} style={styles.backButton}>
           <Ionicons name="arrow-back" size={24} color="#fff" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>9x9 Ultimate</Text>
         <View style={styles.backButton} />
       </View>
 
-      {/* Mode Selector */}
-      <Modal visible={showModeSelector} animationType="fade" transparent onRequestClose={() => setShowModeSelector(false)}>
+      {/* Mode Selector Modal */}
+      <Modal 
+        visible={showModeSelector} 
+        animationType="fade" 
+        transparent 
+        onRequestClose={goHome}
+      >
         <TouchableOpacity 
           style={styles.modalOverlay} 
           activeOpacity={1} 
-          onPress={() => setShowModeSelector(false)}
+          onPress={goHome}
         >
           <TouchableOpacity activeOpacity={1} onPress={(e) => e.stopPropagation()}>
             <Animatable.View animation="zoomIn" style={styles.modeModal}>
@@ -263,20 +316,12 @@ export default function Game9x9Ultimate() {
       {!showModeSelector && (
         <ScrollView contentContainerStyle={styles.gameContent}>
           {/* Status */}
-          <Text style={styles.status}>
-            {gameWinner
-              ? `${gameWinner} Wins! 🎉`
-              : isAIThinking
-              ? 'AI thinking...'
-              : activeBoard !== null
-              ? `${currentPlayer}'s turn - Board ${activeBoard + 1}`
-              : `${currentPlayer}'s turn - Any board`}
-          </Text>
+          <Text style={styles.status}>{getStatusText()}</Text>
 
-          {/* Game Board */}
-          <View style={styles.mainBoard}>
+          {/* Main 3x3 Board of mini boards */}
+          <View style={[styles.mainBoard, { width: BOARD_SIZE }]}>
             {boards.map((miniBoard, boardIdx) => {
-              const isActive = activeBoard === null || activeBoard === boardIdx;
+              const isActive = isMiniBoardActive(boardIdx);
               const winner = boardWinners[boardIdx];
 
               return (
@@ -284,28 +329,43 @@ export default function Game9x9Ultimate() {
                   key={boardIdx}
                   style={[
                     styles.miniBoard,
-                    isActive && !winner && styles.miniBoardActive,
+                    { width: MINI_BOARD_SIZE, height: MINI_BOARD_SIZE },
+                    isActive && styles.miniBoardActive,
+                    winner && styles.miniBoardWon,
                   ]}
                 >
                   {winner ? (
                     <View style={styles.winnerOverlay}>
-                      <Text style={styles.winnerText}>{winner}</Text>
+                      <Text style={[
+                        styles.winnerText, 
+                        { color: winner === 'X' ? '#ef4444' : '#2563eb' }
+                      ]}>
+                        {winner}
+                      </Text>
                     </View>
                   ) : (
-                    miniBoard.map((cell, cellIdx) => (
-                      <TouchableOpacity
-                        key={cellIdx}
-                        style={styles.cell}
-                        onPress={() => handleCellPress(boardIdx, cellIdx)}
-                        disabled={!isActive || winner !== null || isAIThinking}
-                      >
-                        {cell && (
-                          <Animatable.Text animation="zoomIn" style={styles.cellText}>
-                            {cell}
-                          </Animatable.Text>
-                        )}
-                      </TouchableOpacity>
-                    ))
+                    <View style={styles.miniBoardGrid}>
+                      {miniBoard.map((cell, cellIdx) => (
+                        <TouchableOpacity
+                          key={cellIdx}
+                          style={[styles.cell, { width: CELL_SIZE, height: CELL_SIZE }]}
+                          onPress={() => handleCellPress(boardIdx, cellIdx)}
+                          disabled={!isActive || isAIThinking}
+                        >
+                          {cell && (
+                            <Animatable.Text 
+                              animation="zoomIn" 
+                              style={[
+                                styles.cellText,
+                                { color: cell === 'X' ? '#ef4444' : '#2563eb' }
+                              ]}
+                            >
+                              {cell}
+                            </Animatable.Text>
+                          )}
+                        </TouchableOpacity>
+                      ))}
+                    </View>
                   )}
                 </View>
               );
@@ -316,15 +376,22 @@ export default function Game9x9Ultimate() {
           <View style={styles.controls}>
             <TouchableOpacity style={styles.button} onPress={resetGame}>
               <Ionicons name="refresh" size={20} color="#fff" />
-              <Text style={styles.buttonText}>New Game</Text>
+              <Text style={styles.buttonText}>Reset</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={[styles.button, styles.buttonSecondary]}
               onPress={() => setShowModeSelector(true)}
             >
               <Ionicons name="settings" size={20} color={COLORS.secondary} />
-              <Text style={[styles.buttonText, styles.buttonTextSecondary]}>Change Mode</Text>
+              <Text style={[styles.buttonText, styles.buttonTextSecondary]}>Mode</Text>
             </TouchableOpacity>
+          </View>
+
+          {/* Game Info */}
+          <View style={styles.gameInfo}>
+            <Text style={styles.gameInfoText}>
+              {gameMode === 'pvp' ? 'Player vs Player' : `vs AI (${difficulty})`}
+            </Text>
           </View>
         </ScrollView>
       )}
@@ -346,6 +413,9 @@ const styles = StyleSheet.create({
   },
   backButton: {
     width: 40,
+    height: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   headerTitle: {
     fontSize: 20,
@@ -354,76 +424,76 @@ const styles = StyleSheet.create({
   },
   gameContent: {
     alignItems: 'center',
-    paddingVertical: 20,
+    paddingVertical: 12,
     paddingHorizontal: 16,
   },
   status: {
     fontSize: 18,
     fontWeight: '600',
     color: '#fff',
-    marginBottom: 20,
+    marginBottom: 16,
     textAlign: 'center',
   },
   mainBoard: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    width: 375,
-    gap: 5,
+    gap: GAP,
     backgroundColor: '#2f3b4c',
-    padding: 5,
-    borderRadius: 12,
+    padding: 0,
   },
   miniBoard: {
-    width: 118,
-    height: 118,
     backgroundColor: '#e5e7eb',
-    borderRadius: 10,
-    padding: 8,
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 1,
+    borderRadius: 14,
+    padding: 10,
+    position: 'relative',
   },
   miniBoardActive: {
     borderWidth: 3,
     borderColor: '#60a5fa',
-    padding: 5,
+    padding: 7,
+  },
+  miniBoardWon: {
+    // Keep same styling for won boards
+  },
+  miniBoardGrid: {
+    flex: 1,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: CELL_GAP,
   },
   cell: {
-    width: 33,
-    height: 33,
     backgroundColor: '#fff',
     borderRadius: 6,
     alignItems: 'center',
     justifyContent: 'center',
   },
   cellText: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: 'bold',
-    color: '#ef4444',
   },
   winnerOverlay: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: 'rgba(229, 231, 235, 0.95)',
+    borderRadius: 8,
   },
   winnerText: {
-    fontSize: 40,
+    fontSize: 48,
     fontWeight: 'bold',
-    color: '#ef4444',
   },
   controls: {
     flexDirection: 'row',
     gap: 12,
-    marginTop: 24,
+    marginTop: 20,
   },
   button: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: COLORS.secondary,
     paddingVertical: 12,
-    paddingHorizontal: 20,
-    borderRadius: 12,
+    paddingHorizontal: 24,
+    borderRadius: 10,
     gap: 8,
   },
   buttonSecondary: {
@@ -438,6 +508,17 @@ const styles = StyleSheet.create({
   },
   buttonTextSecondary: {
     color: COLORS.secondary,
+  },
+  gameInfo: {
+    marginTop: 16,
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+  },
+  gameInfoText: {
+    color: '#fff',
+    fontSize: 14,
   },
   modalOverlay: {
     flex: 1,
