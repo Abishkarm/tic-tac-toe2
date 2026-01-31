@@ -441,19 +441,21 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: GAP,
-    backgroundColor: '#2f3b4c',
-    padding: 0,
+    backgroundColor: '#1e293b', // Darker background for better contrast
+    padding: 8,
+    borderRadius: 12,
   },
   miniBoard: {
     backgroundColor: '#e5e7eb',
-    borderRadius: 14,
-    padding: 10,
+    borderRadius: 10,
+    padding: 6,
     position: 'relative',
   },
   miniBoardActive: {
-    borderWidth: 3,
-    borderColor: '#60a5fa',
-    padding: 7,
+    borderWidth: 4,
+    borderColor: ACTIVE_BOARD_COLOR,
+    backgroundColor: ACTIVE_BOARD_GLOW,
+    padding: 2,
   },
   miniBoardWon: {
     // Keep same styling for won boards
@@ -466,12 +468,12 @@ const styles = StyleSheet.create({
   },
   cell: {
     backgroundColor: '#fff',
-    borderRadius: 6,
+    borderRadius: 4,
     alignItems: 'center',
     justifyContent: 'center',
   },
   cellText: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: 'bold',
   },
   winnerOverlay: {
