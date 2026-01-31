@@ -209,49 +209,50 @@ export default function Game3x3Screen() {
 
       {/* Mode Selection Modal */}
       <Modal visible={showModeSelector} animationType="fade" transparent={true} onRequestClose={() => router.push('/')}>
-        <TouchableOpacity 
-          style={styles.modalOverlay} 
-          activeOpacity={1} 
-          onPress={() => router.push('/')}
-        >
-          <TouchableOpacity activeOpacity={1} onPress={(e) => e.stopPropagation()}>
-            <Animatable.View animation="zoomIn" style={styles.modeSelector}>
-              <ScrollView 
-                showsVerticalScrollIndicator={false}
-                contentContainerStyle={styles.scrollContent}
-              >
-                <Text style={styles.modeSelectorTitle}>Select Game Mode</Text>
+        <View style={styles.modalOverlay}>
+          <TouchableOpacity 
+            style={styles.modalDismissArea} 
+            activeOpacity={1} 
+            onPress={() => router.push('/')}
+          />
+          <Animatable.View animation="zoomIn" style={styles.modeSelector}>
+            <ScrollView 
+              showsVerticalScrollIndicator={true}
+              contentContainerStyle={styles.scrollContent}
+              style={styles.scrollView}
+            >
+              <Text style={styles.modeSelectorTitle}>Select Game Mode</Text>
 
-                {/* Top Tab Switcher */}
-                <View style={styles.tabSwitcher}>
-                  <TouchableOpacity
-                    style={[styles.tab, modeSelectorTab === 'pvp' && styles.tabActive]}
-                    onPress={() => setModeSelectorTab('pvp')}
-                  >
-                    <Ionicons 
-                      name="people" 
-                      size={24} 
-                      color={modeSelectorTab === 'pvp' ? COLORS.cardBg : COLORS.text} 
-                    />
-                    <Text style={[styles.tabText, modeSelectorTab === 'pvp' && styles.tabTextActive]}>
-                      PvP
-                    </Text>
-                  </TouchableOpacity>
+              {/* Top Tab Switcher */}
+              <View style={styles.tabSwitcher}>
+                <TouchableOpacity
+                  style={[styles.tab, modeSelectorTab === 'pvp' && styles.tabActive]}
+                  onPress={() => setModeSelectorTab('pvp')}
+                >
+                  <Ionicons 
+                    name="people" 
+                    size={24} 
+                    color={modeSelectorTab === 'pvp' ? COLORS.cardBg : COLORS.text} 
+                  />
+                  <Text style={[styles.tabText, modeSelectorTab === 'pvp' && styles.tabTextActive]}>
+                    PvP
+                  </Text>
+                </TouchableOpacity>
 
-                  <TouchableOpacity
-                    style={[styles.tab, modeSelectorTab === 'ai' && styles.tabActive]}
-                    onPress={() => setModeSelectorTab('ai')}
-                  >
-                    <Ionicons 
-                      name="phone-portrait" 
-                      size={24} 
-                      color={modeSelectorTab === 'ai' ? COLORS.cardBg : COLORS.text} 
-                    />
-                    <Text style={[styles.tabText, modeSelectorTab === 'ai' && styles.tabTextActive]}>
-                      Player vs AI
-                    </Text>
-                  </TouchableOpacity>
-                </View>
+                <TouchableOpacity
+                  style={[styles.tab, modeSelectorTab === 'ai' && styles.tabActive]}
+                  onPress={() => setModeSelectorTab('ai')}
+                >
+                  <Ionicons 
+                    name="phone-portrait" 
+                    size={24} 
+                    color={modeSelectorTab === 'ai' ? COLORS.cardBg : COLORS.text} 
+                  />
+                  <Text style={[styles.tabText, modeSelectorTab === 'ai' && styles.tabTextActive]}>
+                    Player vs AI
+                  </Text>
+                </TouchableOpacity>
+              </View>
 
                 {/* PvP Section */}
                 {modeSelectorTab === 'pvp' && (
