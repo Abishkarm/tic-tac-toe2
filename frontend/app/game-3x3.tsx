@@ -572,7 +572,11 @@ const styles = StyleSheet.create({
     padding: 24,
     width: '100%',
     maxWidth: 400,
-    maxHeight: '90%',
+    maxHeight: '80%',
+  },
+  scrollContent: {
+    flexGrow: 1,
+    paddingBottom: 10,
   },
   modeSelectorTitle: {
     fontSize: FONTS.sizes.xlarge,
