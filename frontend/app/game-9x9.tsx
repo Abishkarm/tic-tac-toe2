@@ -21,11 +21,15 @@ type GameMode = 'pvp' | 'ai';
 type Difficulty = 'easy' | 'medium' | 'hard';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
-const BOARD_SIZE = Math.min(SCREEN_WIDTH - 32, 420); // Max 420px like the HTML
-const GAP = 14;
+const BOARD_SIZE = Math.min(SCREEN_WIDTH - 24, 380); // Slightly larger board
+const GAP = 6; // Smaller gap between mini-boards
 const MINI_BOARD_SIZE = (BOARD_SIZE - GAP * 2) / 3;
-const CELL_GAP = 6;
-const CELL_SIZE = (MINI_BOARD_SIZE - 20 - CELL_GAP * 2) / 3; // Account for padding
+const CELL_GAP = 3; // Smaller gap between cells
+const CELL_SIZE = (MINI_BOARD_SIZE - 12 - CELL_GAP * 2) / 3; // Bigger cells
+
+// Bright colors for active board highlight
+const ACTIVE_BOARD_COLOR = '#22c55e'; // Bright green
+const ACTIVE_BOARD_GLOW = '#86efac'; // Light green glow
 
 // Winning combinations
 const WINNING_LINES = [
