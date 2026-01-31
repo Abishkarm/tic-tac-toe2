@@ -269,14 +269,14 @@ export default function Game9x9Ultimate() {
         transparent 
         onRequestClose={goHome}
       >
-        <TouchableOpacity 
-          style={styles.modalOverlay} 
-          activeOpacity={1} 
-          onPress={goHome}
-        >
-          <TouchableOpacity activeOpacity={1} onPress={(e) => e.stopPropagation()}>
-            <Animatable.View animation="zoomIn" style={styles.modeModal}>
-              <Text style={styles.modeTitle}>Select Mode</Text>
+        <View style={styles.modalOverlay}>
+          <TouchableOpacity 
+            style={styles.modalDismissArea} 
+            activeOpacity={1} 
+            onPress={goHome}
+          />
+          <Animatable.View animation="zoomIn" style={styles.modeModal}>
+            <Text style={styles.modeTitle}>Select Mode</Text>
 
               <TouchableOpacity
                 style={styles.modeOption}
