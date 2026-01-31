@@ -346,8 +346,7 @@ export default function Game3x3Screen() {
                 )}
               </ScrollView>
             </Animatable.View>
-          </TouchableOpacity>
-        </TouchableOpacity>
+        </View>
       </Modal>
 
       {!showModeSelector && (
