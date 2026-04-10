@@ -23,26 +23,22 @@ type Difficulty = 'easy' | 'medium' | 'hard';
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 // === ROBUST LAYOUT CALCULATIONS ===
-const BOARD_MARGIN = 4; // minimal margin
-const BOARD_PADDING = 3; // minimal padding inside board
-const MINI_GAP = 2; // thin line between mini-boards
-const CELL_GAP = 1; // minimal gap between cells
-const MINI_PADDING = 2; // minimal padding inside each mini-board
+const BOARD_MARGIN = 2;
+const BOARD_PADDING = 2;
+const MINI_GAP = 2; // visible indigo separator between mini-boards
+const CELL_GAP = 1;
+const MINI_PADDING = 1;
 
 // Board fills nearly the full screen width
-const BOARD_OUTER_SIZE = Math.min(SCREEN_WIDTH - BOARD_MARGIN * 2, 400);
-// Available width inside board for the 3 mini-boards
+const BOARD_OUTER_SIZE = Math.min(SCREEN_WIDTH - BOARD_MARGIN * 2, 420);
 const BOARD_INNER = BOARD_OUTER_SIZE - BOARD_PADDING * 2;
-// Each mini-board size (3 boards + 2 gaps)
 const MINI_BOARD_SIZE = Math.floor((BOARD_INNER - MINI_GAP * 2) / 3);
-// Each cell size inside a mini-board (3 cells + 2 gaps + padding)
 const CELL_SIZE = Math.floor((MINI_BOARD_SIZE - MINI_PADDING * 2 - CELL_GAP * 2) / 3);
-// Explicit grid content size (3 cells + 2 gaps)
 const GRID_SIZE = CELL_SIZE * 3 + CELL_GAP * 2;
 
-// Bright green for active board highlight
-const ACTIVE_BORDER_COLOR = '#10b981'; // Emerald green
-const ACTIVE_BG_COLOR = '#d1fae5'; // Very light green background
+// Active board highlight — bright orange/amber
+const ACTIVE_BORDER_COLOR = '#f97316';
+const ACTIVE_BG_COLOR = '#fff7ed';
 
 // Winning combinations
 const WINNING_LINES = [
@@ -442,7 +438,7 @@ export default function Game9x9Ultimate() {
               {activeBoard !== -1 && !gameOver && (
                 <View style={styles.activeIndicator}>
                   <View style={[styles.activeIndicatorDot, { backgroundColor: ACTIVE_BORDER_COLOR }]} />
-                  <Text style={styles.activeIndicatorText}>Active board highlighted</Text>
+                  <Text style={styles.activeIndicatorText}>Active board highlighted in orange</Text>
                 </View>
               )}
             </View>
@@ -492,7 +488,7 @@ export default function Game9x9Ultimate() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0a0a1a',
+    backgroundColor: '#0f172a',
   },
   header: {
     flexDirection: 'row',
@@ -500,7 +496,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 16,
     paddingVertical: 10,
-    backgroundColor: '#0a0a1a',
+    backgroundColor: '#0f172a',
   },
   backButton: {
     width: 44,
@@ -549,13 +545,13 @@ const styles = StyleSheet.create({
     color: '#94a3b8',
   },
   mainBoard: {
-    backgroundColor: '#1a1a2e',
+    backgroundColor: '#4338ca',
     borderRadius: 10,
     padding: BOARD_PADDING,
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: '#16213e',
+    borderWidth: 2,
+    borderColor: '#6366f1',
   },
   boardInner: {
     // Contains the 3 rows of mini-boards
@@ -564,7 +560,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
   },
   miniBoard: {
-    backgroundColor: '#e2e8f0',
+    backgroundColor: '#f1f5f9',
     borderRadius: 5,
     padding: MINI_PADDING,
     justifyContent: 'center',
@@ -584,12 +580,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
   },
   cell: {
-    backgroundColor: '#f8fafc',
+    backgroundColor: '#ffffff',
     borderRadius: 4,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: '#a0aec0',
+    borderColor: '#818cf8',
   },
   cellText: {
     fontWeight: 'bold',

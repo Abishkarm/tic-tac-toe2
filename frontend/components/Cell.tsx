@@ -24,12 +24,12 @@ export const Cell: React.FC<CellProps> = ({
   const cellStyle: ViewStyle = {
     width: size,
     height: size,
-    backgroundColor: isWinningCell ? '#fef3c7' : '#f0f4ff',
+    backgroundColor: isWinningCell ? '#fef3c7' : '#ffffff',
     borderRadius: size === SIZES.cellSize9x9 ? 6 : 12,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1.5,
-    borderColor: isWinningCell ? '#f59e0b' : '#b8c4d6',
+    borderColor: isWinningCell ? '#f59e0b' : '#818cf8',
   };
 
   const iconSize = size * 0.6;

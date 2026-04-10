@@ -45,7 +45,7 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     width: SIZES.cellSize * 3 + SIZES.spacing * 2,
     gap: SIZES.spacing / 2,
-    backgroundColor: '#2d3748',
+    backgroundColor: '#4338ca',
     padding: 8,
     borderRadius: 14,
   },
