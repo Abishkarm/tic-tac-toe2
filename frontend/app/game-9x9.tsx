@@ -339,7 +339,6 @@ export default function Game9x9Ultimate() {
           col < 2 && { marginRight: MINI_GAP },
           row < 2 && { marginBottom: MINI_GAP },
           isActive && !gameOver && styles.miniBoardActive,
-          !isActive && !winner && !isFull && styles.miniBoardInactive,
         ]}
       >
         {winner ? (
@@ -576,9 +575,6 @@ const styles = StyleSheet.create({
     borderWidth: 2.5,
     borderColor: ACTIVE_BORDER_COLOR,
     padding: MINI_PADDING - 1,
-  },
-  miniBoardInactive: {
-    opacity: 0.45,
   },
   miniBoardGrid: {
     flex: 1,
