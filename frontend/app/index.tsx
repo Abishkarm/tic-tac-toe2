@@ -67,8 +67,8 @@ export default function HomeScreen() {
         <View style={styles.logoContainer}>
           <Ionicons name="trophy" size={48} color={COLORS.secondary} />
         </View>
-        <Text style={styles.title}>Ultimate</Text>
-        <Text style={styles.subtitle}>Tic-Tac-Toe</Text>
+        <Text style={styles.title}>Tic Tac Toe</Text>
+        <Text style={styles.subtitle}>All in One</Text>
       </Animatable.View>
 
       {/* Menu Items */}
