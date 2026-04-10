@@ -23,14 +23,14 @@ type Difficulty = 'easy' | 'medium' | 'hard';
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 // === ROBUST LAYOUT CALCULATIONS ===
-const BOARD_MARGIN = 12; // horizontal margin for outer board
-const BOARD_PADDING = 4; // padding inside the board container
+const BOARD_MARGIN = 6; // smaller horizontal margin to fill more screen
+const BOARD_PADDING = 5; // padding inside the board container
 const MINI_GAP = 3; // gap between mini-boards (visible separator line)
 const CELL_GAP = 2; // gap between cells within a mini-board
 const MINI_PADDING = 3; // padding inside each mini-board
 
-// Board occupies most of the screen width
-const BOARD_OUTER_SIZE = Math.min(SCREEN_WIDTH - BOARD_MARGIN * 2, 380);
+// Board fills nearly the full screen width
+const BOARD_OUTER_SIZE = Math.min(SCREEN_WIDTH - BOARD_MARGIN * 2, 400);
 // Available width inside board for the 3 mini-boards
 const BOARD_INNER = BOARD_OUTER_SIZE - BOARD_PADDING * 2;
 // Each mini-board size (3 boards + 2 gaps)
@@ -38,10 +38,10 @@ const MINI_BOARD_SIZE = Math.floor((BOARD_INNER - MINI_GAP * 2) / 3);
 // Each cell size inside a mini-board (3 cells + 2 gaps + padding)
 const CELL_SIZE = Math.floor((MINI_BOARD_SIZE - MINI_PADDING * 2 - CELL_GAP * 2) / 3);
 
-// Bright colors for active board highlight
-const ACTIVE_BORDER_COLOR = '#FBBF24'; // Bright amber/yellow
-const ACTIVE_BG_COLOR = '#FEF3C7'; // Light yellow background
-const INACTIVE_BG_COLOR = '#E5E7EB'; // Gray for non-active
+// Bright cyan/teal for active board highlight (replacing yellow)
+const ACTIVE_BORDER_COLOR = '#06b6d4'; // Bright cyan
+const ACTIVE_BG_COLOR = '#e0f7fa'; // Very light cyan background
+const INACTIVE_BG_COLOR = '#dfe6ed'; // Slightly darker gray for non-active
 
 // Winning combinations
 const WINNING_LINES = [
@@ -369,7 +369,7 @@ export default function Game9x9Ultimate() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#1e293b" />
+      <StatusBar barStyle="light-content" backgroundColor="#0f172a" />
 
       {/* Header */}
       <View style={styles.header}>
@@ -431,57 +431,59 @@ export default function Game9x9Ultimate() {
 
       {/* Game Screen */}
       {!showModeSelector && (
-        <ScrollView 
-          contentContainerStyle={styles.gameContent}
-          showsVerticalScrollIndicator={false}
-        >
-          {/* Status */}
-          <View style={styles.statusContainer}>
-            <Text style={styles.status}>{getStatusText()}</Text>
-            {activeBoard !== -1 && !gameOver && (
-              <View style={styles.activeIndicator}>
-                <View style={[styles.activeIndicatorDot, { backgroundColor: ACTIVE_BORDER_COLOR }]} />
-                <Text style={styles.activeIndicatorText}>Active board highlighted</Text>
-              </View>
-            )}
-          </View>
-
-          {/* Main Board */}
-          <View style={[styles.mainBoard, { width: BOARD_OUTER_SIZE, height: BOARD_OUTER_SIZE }]}>
-            <View style={styles.boardInner}>
-              {[0, 1, 2].map(row => (
-                <View key={row} style={styles.boardRow}>
-                  {[0, 1, 2].map(col => {
-                    const boardIdx = row * 3 + col;
-                    return renderMiniBoard(boardIdx);
-                  })}
+        <View style={styles.gameArea}>
+          <ScrollView 
+            contentContainerStyle={styles.gameContent}
+            showsVerticalScrollIndicator={false}
+          >
+            {/* Status */}
+            <View style={styles.statusContainer}>
+              <Text style={styles.status}>{getStatusText()}</Text>
+              {activeBoard !== -1 && !gameOver && (
+                <View style={styles.activeIndicator}>
+                  <View style={[styles.activeIndicatorDot, { backgroundColor: ACTIVE_BORDER_COLOR }]} />
+                  <Text style={styles.activeIndicatorText}>Active board highlighted</Text>
                 </View>
-              ))}
+              )}
             </View>
-          </View>
 
-          {/* Controls */}
-          <View style={styles.controls}>
-            <TouchableOpacity style={styles.button} onPress={resetGame}>
-              <Ionicons name="refresh" size={20} color="#fff" />
-              <Text style={styles.buttonText}>Reset</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.button, styles.buttonSecondary]}
-              onPress={() => setShowModeSelector(true)}
-            >
-              <Ionicons name="grid" size={20} color={COLORS.secondary} />
-              <Text style={[styles.buttonText, styles.buttonTextSecondary]}>Mode</Text>
-            </TouchableOpacity>
-          </View>
+            {/* Main Board */}
+            <View style={[styles.mainBoard, { width: BOARD_OUTER_SIZE, height: BOARD_OUTER_SIZE }]}>
+              <View style={styles.boardInner}>
+                {[0, 1, 2].map(row => (
+                  <View key={row} style={styles.boardRow}>
+                    {[0, 1, 2].map(col => {
+                      const boardIdx = row * 3 + col;
+                      return renderMiniBoard(boardIdx);
+                    })}
+                  </View>
+                ))}
+              </View>
+            </View>
 
-          {/* Game Info */}
-          <View style={styles.gameInfo}>
-            <Text style={styles.gameInfoText}>
-              {gameMode === 'pvp' ? 'Player vs Player' : `vs AI (${difficulty})`}
-            </Text>
-          </View>
-        </ScrollView>
+            {/* Controls */}
+            <View style={styles.controls}>
+              <TouchableOpacity style={styles.button} onPress={resetGame}>
+                <Ionicons name="refresh" size={20} color="#fff" />
+                <Text style={styles.buttonText}>Reset</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.button, styles.buttonSecondary]}
+                onPress={() => setShowModeSelector(true)}
+              >
+                <Ionicons name="grid" size={20} color={COLORS.secondary} />
+                <Text style={[styles.buttonText, styles.buttonTextSecondary]}>Mode</Text>
+              </TouchableOpacity>
+            </View>
+
+            {/* Game Info */}
+            <View style={styles.gameInfo}>
+              <Text style={styles.gameInfoText}>
+                {gameMode === 'pvp' ? 'Player vs Player' : `vs AI (${difficulty})`}
+              </Text>
+            </View>
+          </ScrollView>
+        </View>
       )}
     </SafeAreaView>
   );
@@ -490,15 +492,15 @@ export default function Game9x9Ultimate() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#1e293b',
+    backgroundColor: '#0f172a',
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
-    paddingVertical: 12,
-    backgroundColor: '#1e293b',
+    paddingVertical: 10,
+    backgroundColor: '#0f172a',
   },
   backButton: {
     width: 44,
@@ -511,14 +513,19 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#fff',
   },
+  gameArea: {
+    flex: 1,
+  },
   gameContent: {
+    flexGrow: 1,
     alignItems: 'center',
+    justifyContent: 'center',
     paddingVertical: 8,
     paddingHorizontal: BOARD_MARGIN,
   },
   statusContainer: {
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: 10,
   },
   status: {
     fontSize: 17,
@@ -542,11 +549,13 @@ const styles = StyleSheet.create({
     color: '#94a3b8',
   },
   mainBoard: {
-    backgroundColor: '#334155',
+    backgroundColor: '#1e293b',
     borderRadius: 10,
     padding: BOARD_PADDING,
     alignItems: 'center',
     justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: '#334155',
   },
   boardInner: {
     // Contains the 3 rows of mini-boards
@@ -555,7 +564,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
   },
   miniBoard: {
-    backgroundColor: '#f1f5f9',
+    backgroundColor: '#cbd5e1',
     borderRadius: 6,
     padding: MINI_PADDING,
     justifyContent: 'center',
@@ -566,11 +575,10 @@ const styles = StyleSheet.create({
     backgroundColor: ACTIVE_BG_COLOR,
     borderWidth: 2.5,
     borderColor: ACTIVE_BORDER_COLOR,
-    // Reduce padding to account for border
     padding: MINI_PADDING - 1,
   },
   miniBoardInactive: {
-    opacity: 0.55,
+    opacity: 0.45,
   },
   miniBoardGrid: {
     flex: 1,
@@ -585,6 +593,8 @@ const styles = StyleSheet.create({
     borderRadius: 3,
     alignItems: 'center',
     justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: '#94a3b8',
   },
   cellText: {
     fontWeight: 'bold',

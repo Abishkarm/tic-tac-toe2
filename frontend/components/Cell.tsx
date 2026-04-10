@@ -25,9 +25,11 @@ export const Cell: React.FC<CellProps> = ({
     width: size,
     height: size,
     backgroundColor: isWinningCell ? '#fef3c7' : '#ffffff',
-    borderRadius: size === SIZES.cellSize9x9 ? 6 : 8,
+    borderRadius: size === SIZES.cellSize9x9 ? 6 : 10,
     alignItems: 'center',
     justifyContent: 'center',
+    borderWidth: 1.5,
+    borderColor: isWinningCell ? '#f59e0b' : '#c7d2de',
   };
 
   const iconSize = size * 0.6;
