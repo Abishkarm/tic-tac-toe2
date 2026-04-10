@@ -208,12 +208,12 @@ export default function Game3x3Screen() {
       </View>
 
       {/* Mode Selection Modal */}
-      <Modal visible={showModeSelector} animationType="fade" transparent={true} onRequestClose={() => router.push('/')}>
+      <Modal visible={showModeSelector} animationType="fade" transparent={true} onRequestClose={() => setShowModeSelector(false)}>
         <View style={styles.modalOverlay}>
           <TouchableOpacity 
             style={styles.modalDismissArea} 
             activeOpacity={1} 
-            onPress={() => router.push('/')}
+            onPress={() => setShowModeSelector(false)}
           />
           <Animatable.View animation="zoomIn" style={styles.modeSelector}>
             <ScrollView 

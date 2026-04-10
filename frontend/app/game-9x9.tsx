@@ -21,15 +21,27 @@ type GameMode = 'pvp' | 'ai';
 type Difficulty = 'easy' | 'medium' | 'hard';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
-const BOARD_SIZE = Math.min(SCREEN_WIDTH - 24, 360); // Total board size
-const GAP = 4; // Small gap between mini-boards (visible line)
-const MINI_BOARD_SIZE = (BOARD_SIZE - GAP * 2 - 16) / 3; // 3 boards with gaps, minus padding
-const CELL_GAP = 2; // Tiny gap between cells
-const CELL_SIZE = (MINI_BOARD_SIZE - 8 - CELL_GAP * 2) / 3; // Bigger cells
+
+// === ROBUST LAYOUT CALCULATIONS ===
+const BOARD_MARGIN = 12; // horizontal margin for outer board
+const BOARD_PADDING = 4; // padding inside the board container
+const MINI_GAP = 3; // gap between mini-boards (visible separator line)
+const CELL_GAP = 2; // gap between cells within a mini-board
+const MINI_PADDING = 3; // padding inside each mini-board
+
+// Board occupies most of the screen width
+const BOARD_OUTER_SIZE = Math.min(SCREEN_WIDTH - BOARD_MARGIN * 2, 380);
+// Available width inside board for the 3 mini-boards
+const BOARD_INNER = BOARD_OUTER_SIZE - BOARD_PADDING * 2;
+// Each mini-board size (3 boards + 2 gaps)
+const MINI_BOARD_SIZE = Math.floor((BOARD_INNER - MINI_GAP * 2) / 3);
+// Each cell size inside a mini-board (3 cells + 2 gaps + padding)
+const CELL_SIZE = Math.floor((MINI_BOARD_SIZE - MINI_PADDING * 2 - CELL_GAP * 2) / 3);
 
 // Bright colors for active board highlight
-const ACTIVE_BOARD_COLOR = '#22c55e'; // Bright green
-const ACTIVE_BOARD_GLOW = '#dcfce7'; // Very light green background
+const ACTIVE_BORDER_COLOR = '#FBBF24'; // Bright amber/yellow
+const ACTIVE_BG_COLOR = '#FEF3C7'; // Light yellow background
+const INACTIVE_BG_COLOR = '#E5E7EB'; // Gray for non-active
 
 // Winning combinations
 const WINNING_LINES = [
@@ -58,6 +70,7 @@ export default function Game9x9Ultimate() {
   // Game state
   const [gameOver, setGameOver] = useState(false);
   const [gameWinner, setGameWinner] = useState<CellValue>(null);
+  const [isDraw, setIsDraw] = useState(false);
   
   // UI state
   const [showModeSelector, setShowModeSelector] = useState(true);
@@ -80,14 +93,24 @@ export default function Game9x9Ultimate() {
     return board.every(cell => cell !== null);
   };
 
+  // Check if overall game is draw
+  const isGameDraw = (winners: CellValue[], allBoards: Board[]): boolean => {
+    // All boards are either won or full
+    for (let i = 0; i < 9; i++) {
+      if (winners[i] === null && !isBoardFull(allBoards[i])) {
+        return false;
+      }
+    }
+    return checkWinner(winners) === null;
+  };
+
   // AI move logic
   const makeAIMove = () => {
     const availableMoves: { boardIdx: number; cellIdx: number }[] = [];
 
     for (let b = 0; b < 9; b++) {
-      // Skip won boards
       if (boardWinners[b] !== null) continue;
-      // Skip if not active board (when activeBoard is set)
+      if (isBoardFull(boards[b])) continue;
       if (activeBoard !== -1 && activeBoard !== b) continue;
 
       for (let c = 0; c < 9; c++) {
@@ -102,11 +125,9 @@ export default function Game9x9Ultimate() {
     let chosenMove;
 
     if (difficulty === 'easy') {
-      // Random move
       chosenMove = availableMoves[Math.floor(Math.random() * availableMoves.length)];
     } else {
-      // Try to win or block (medium/hard)
-      // 1. Try to win a mini board
+      // Try to win a mini board
       for (const move of availableMoves) {
         const testBoard = [...boards[move.boardIdx]];
         testBoard[move.cellIdx] = 'O';
@@ -116,7 +137,7 @@ export default function Game9x9Ultimate() {
         }
       }
 
-      // 2. Try to block opponent's win
+      // Try to block opponent's win
       if (!chosenMove) {
         for (const move of availableMoves) {
           const testBoard = [...boards[move.boardIdx]];
@@ -128,9 +149,8 @@ export default function Game9x9Ultimate() {
         }
       }
 
-      // 3. For hard mode, also try to win the overall game
+      // For hard mode, try to win the overall game
       if (!chosenMove && difficulty === 'hard') {
-        // Try to win a board that would help win the game
         for (const move of availableMoves) {
           const testBoard = [...boards[move.boardIdx]];
           testBoard[move.cellIdx] = 'O';
@@ -145,9 +165,17 @@ export default function Game9x9Ultimate() {
         }
       }
 
-      // 4. Random if no critical move
+      // Prefer center cells, then corners
       if (!chosenMove) {
-        chosenMove = availableMoves[Math.floor(Math.random() * availableMoves.length)];
+        const centerMoves = availableMoves.filter(m => m.cellIdx === 4);
+        const cornerMoves = availableMoves.filter(m => [0, 2, 6, 8].includes(m.cellIdx));
+        if (centerMoves.length > 0) {
+          chosenMove = centerMoves[Math.floor(Math.random() * centerMoves.length)];
+        } else if (cornerMoves.length > 0) {
+          chosenMove = cornerMoves[Math.floor(Math.random() * cornerMoves.length)];
+        } else {
+          chosenMove = availableMoves[Math.floor(Math.random() * availableMoves.length)];
+        }
       }
     }
 
@@ -160,22 +188,21 @@ export default function Game9x9Ultimate() {
   useEffect(() => {
     if (gameMode === 'ai' && currentPlayer === 'O' && !gameOver && !showModeSelector) {
       setIsAIThinking(true);
-      setTimeout(() => {
+      const timer = setTimeout(() => {
         makeAIMove();
         setIsAIThinking(false);
       }, 600);
+      return () => clearTimeout(timer);
     }
   }, [currentPlayer, gameMode, gameOver, showModeSelector]);
 
   // Handle cell press - following Ultimate Tic-Tac-Toe rules
   const handleCellPress = (boardIdx: number, cellIdx: number) => {
-    // Validation
     if (gameOver || isAIThinking) return;
-    // Check if this board can be played
     if (activeBoard !== -1 && activeBoard !== boardIdx) return;
-    // Check if cell or board already filled/won
     if (boards[boardIdx][cellIdx] !== null) return;
     if (boardWinners[boardIdx] !== null) return;
+    if (isBoardFull(boards[boardIdx])) return;
 
     // Make the move
     const newBoards = boards.map((board, idx) =>
@@ -202,9 +229,14 @@ export default function Game9x9Ultimate() {
       }
     }
 
-    // Determine next active board based on the cell that was played
-    // The next board to play is determined by the cell index
-    // If that board is already won, any board can be played
+    // Check for draw
+    if (isGameDraw(newBoardWinners, newBoards)) {
+      setIsDraw(true);
+      setGameOver(true);
+      return;
+    }
+
+    // Determine next active board
     if (newBoardWinners[cellIdx] !== null || isBoardFull(newBoards[cellIdx])) {
       setActiveBoard(-1); // Any board
     } else {
@@ -223,6 +255,7 @@ export default function Game9x9Ultimate() {
     setActiveBoard(-1);
     setGameOver(false);
     setGameWinner(null);
+    setIsDraw(false);
   };
 
   // Start game with mode
@@ -240,29 +273,110 @@ export default function Game9x9Ultimate() {
 
   // Get status text
   const getStatusText = () => {
-    if (gameWinner) return `🎉 Player ${gameWinner} wins the game!`;
+    if (gameWinner) return `🎉 Player ${gameWinner} wins!`;
+    if (isDraw) return "It's a Draw!";
     if (isAIThinking) return 'AI thinking...';
-    if (activeBoard === -1) return `Player ${currentPlayer}'s turn`;
-    return `Player ${currentPlayer}'s turn - Board ${activeBoard + 1}`;
+    if (activeBoard === -1) return `Player ${currentPlayer}'s turn — any board`;
+    return `Player ${currentPlayer}'s turn — Board ${activeBoard + 1}`;
   };
 
   // Check if a mini board is active (can be played)
   const isMiniBoardActive = (boardIdx: number): boolean => {
     if (gameOver) return false;
     if (boardWinners[boardIdx] !== null) return false;
+    if (isBoardFull(boards[boardIdx])) return false;
     return activeBoard === -1 || activeBoard === boardIdx;
+  };
+
+  // Render a single cell
+  const renderCell = (boardIdx: number, cellIdx: number, cell: CellValue, isActive: boolean) => {
+    const row = Math.floor(cellIdx / 3);
+    const col = cellIdx % 3;
+    
+    return (
+      <TouchableOpacity
+        key={cellIdx}
+        style={[
+          styles.cell,
+          { width: CELL_SIZE, height: CELL_SIZE },
+          col < 2 && { marginRight: CELL_GAP },
+          row < 2 && { marginBottom: CELL_GAP },
+        ]}
+        onPress={() => handleCellPress(boardIdx, cellIdx)}
+        disabled={!isActive || isAIThinking}
+        activeOpacity={0.6}
+      >
+        {cell && (
+          <Animatable.Text 
+            animation="zoomIn" 
+            duration={200}
+            style={[
+              styles.cellText,
+              { color: cell === 'X' ? '#ef4444' : '#2563eb', fontSize: CELL_SIZE * 0.55 }
+            ]}
+          >
+            {cell}
+          </Animatable.Text>
+        )}
+      </TouchableOpacity>
+    );
+  };
+
+  // Render a mini board
+  const renderMiniBoard = (boardIdx: number) => {
+    const isActive = isMiniBoardActive(boardIdx);
+    const winner = boardWinners[boardIdx];
+    const isFull = isBoardFull(boards[boardIdx]);
+    const row = Math.floor(boardIdx / 3);
+    const col = boardIdx % 3;
+
+    return (
+      <View
+        key={boardIdx}
+        style={[
+          styles.miniBoard,
+          { width: MINI_BOARD_SIZE, height: MINI_BOARD_SIZE },
+          col < 2 && { marginRight: MINI_GAP },
+          row < 2 && { marginBottom: MINI_GAP },
+          isActive && !gameOver && styles.miniBoardActive,
+          !isActive && !winner && !isFull && styles.miniBoardInactive,
+        ]}
+      >
+        {winner ? (
+          <View style={styles.winnerOverlay}>
+            <Text style={[
+              styles.winnerText, 
+              { color: winner === 'X' ? '#ef4444' : '#2563eb' }
+            ]}>
+              {winner}
+            </Text>
+          </View>
+        ) : (
+          <View style={styles.miniBoardGrid}>
+            {[0, 1, 2].map(row => (
+              <View key={row} style={styles.cellRow}>
+                {[0, 1, 2].map(col => {
+                  const cellIdx = row * 3 + col;
+                  return renderCell(boardIdx, cellIdx, boards[boardIdx][cellIdx], isActive);
+                })}
+              </View>
+            ))}
+          </View>
+        )}
+      </View>
+    );
   };
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#2f3b4c" />
+      <StatusBar barStyle="light-content" backgroundColor="#1e293b" />
 
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={goHome} style={styles.backButton}>
           <Ionicons name="arrow-back" size={24} color="#fff" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>9x9 Ultimate</Text>
+        <Text style={styles.headerTitle}>9×9 Ultimate</Text>
         <View style={styles.backButton} />
       </View>
 
@@ -277,102 +391,73 @@ export default function Game9x9Ultimate() {
           <TouchableOpacity 
             style={styles.modalDismissArea} 
             activeOpacity={1} 
-            onPress={goHome}
+            onPress={() => setShowModeSelector(false)}
           />
           <Animatable.View animation="zoomIn" style={styles.modeModal}>
             <Text style={styles.modeTitle}>Select Mode</Text>
 
-              <TouchableOpacity
-                style={styles.modeOption}
-                onPress={() => startGame('pvp')}
-              >
-                <Ionicons name="people" size={32} color={COLORS.secondary} />
-                <Text style={styles.modeOptionText}>Player vs Player</Text>
-              </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.modeOption}
+              onPress={() => startGame('pvp')}
+            >
+              <Ionicons name="people" size={28} color={COLORS.secondary} />
+              <Text style={styles.modeOptionText}>Player vs Player</Text>
+            </TouchableOpacity>
 
-              <Text style={styles.aiLabel}>Player vs AI</Text>
-              <View style={styles.aiOptions}>
-                <TouchableOpacity
-                  style={styles.aiButton}
-                  onPress={() => startGame('ai', 'easy')}
-                >
-                  <Text style={styles.aiButtonText}>Easy</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={styles.aiButton}
-                  onPress={() => startGame('ai', 'medium')}
-                >
-                  <Text style={styles.aiButtonText}>Medium</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={styles.aiButton}
-                  onPress={() => startGame('ai', 'hard')}
-                >
-                  <Text style={styles.aiButtonText}>Hard</Text>
-                </TouchableOpacity>
-              </View>
-            </Animatable.View>
+            <Text style={styles.aiLabel}>Player vs AI</Text>
+            <View style={styles.aiOptions}>
+              <TouchableOpacity
+                style={styles.aiButton}
+                onPress={() => startGame('ai', 'easy')}
+              >
+                <Text style={styles.aiButtonText}>Easy</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.aiButton}
+                onPress={() => startGame('ai', 'medium')}
+              >
+                <Text style={styles.aiButtonText}>Medium</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.aiButton}
+                onPress={() => startGame('ai', 'hard')}
+              >
+                <Text style={styles.aiButtonText}>Hard</Text>
+              </TouchableOpacity>
+            </View>
+          </Animatable.View>
         </View>
       </Modal>
 
       {/* Game Screen */}
       {!showModeSelector && (
-        <ScrollView contentContainerStyle={styles.gameContent}>
+        <ScrollView 
+          contentContainerStyle={styles.gameContent}
+          showsVerticalScrollIndicator={false}
+        >
           {/* Status */}
-          <Text style={styles.status}>{getStatusText()}</Text>
+          <View style={styles.statusContainer}>
+            <Text style={styles.status}>{getStatusText()}</Text>
+            {activeBoard !== -1 && !gameOver && (
+              <View style={styles.activeIndicator}>
+                <View style={[styles.activeIndicatorDot, { backgroundColor: ACTIVE_BORDER_COLOR }]} />
+                <Text style={styles.activeIndicatorText}>Active board highlighted</Text>
+              </View>
+            )}
+          </View>
 
-          {/* Main 3x3 Board of mini boards */}
-          <View style={[styles.mainBoard, { width: BOARD_SIZE }]}>
-            {boards.map((miniBoard, boardIdx) => {
-              const isActive = isMiniBoardActive(boardIdx);
-              const winner = boardWinners[boardIdx];
-
-              return (
-                <View
-                  key={boardIdx}
-                  style={[
-                    styles.miniBoard,
-                    { width: MINI_BOARD_SIZE, height: MINI_BOARD_SIZE },
-                    isActive && styles.miniBoardActive,
-                    winner && styles.miniBoardWon,
-                  ]}
-                >
-                  {winner ? (
-                    <View style={styles.winnerOverlay}>
-                      <Text style={[
-                        styles.winnerText, 
-                        { color: winner === 'X' ? '#ef4444' : '#2563eb' }
-                      ]}>
-                        {winner}
-                      </Text>
-                    </View>
-                  ) : (
-                    <View style={styles.miniBoardGrid}>
-                      {miniBoard.map((cell, cellIdx) => (
-                        <TouchableOpacity
-                          key={cellIdx}
-                          style={[styles.cell, { width: CELL_SIZE, height: CELL_SIZE }]}
-                          onPress={() => handleCellPress(boardIdx, cellIdx)}
-                          disabled={!isActive || isAIThinking}
-                        >
-                          {cell && (
-                            <Animatable.Text 
-                              animation="zoomIn" 
-                              style={[
-                                styles.cellText,
-                                { color: cell === 'X' ? '#ef4444' : '#2563eb' }
-                              ]}
-                            >
-                              {cell}
-                            </Animatable.Text>
-                          )}
-                        </TouchableOpacity>
-                      ))}
-                    </View>
-                  )}
+          {/* Main Board */}
+          <View style={[styles.mainBoard, { width: BOARD_OUTER_SIZE, height: BOARD_OUTER_SIZE }]}>
+            <View style={styles.boardInner}>
+              {[0, 1, 2].map(row => (
+                <View key={row} style={styles.boardRow}>
+                  {[0, 1, 2].map(col => {
+                    const boardIdx = row * 3 + col;
+                    return renderMiniBoard(boardIdx);
+                  })}
                 </View>
-              );
-            })}
+              ))}
+            </View>
           </View>
 
           {/* Controls */}
@@ -385,7 +470,7 @@ export default function Game9x9Ultimate() {
               style={[styles.button, styles.buttonSecondary]}
               onPress={() => setShowModeSelector(true)}
             >
-              <Ionicons name="settings" size={20} color={COLORS.secondary} />
+              <Ionicons name="grid" size={20} color={COLORS.secondary} />
               <Text style={[styles.buttonText, styles.buttonTextSecondary]}>Mode</Text>
             </TouchableOpacity>
           </View>
@@ -405,18 +490,19 @@ export default function Game9x9Ultimate() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#2f3b4c',
+    backgroundColor: '#1e293b',
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
-    paddingVertical: 16,
+    paddingVertical: 12,
+    backgroundColor: '#1e293b',
   },
   backButton: {
-    width: 40,
-    height: 40,
+    width: 44,
+    height: 44,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -427,70 +513,95 @@ const styles = StyleSheet.create({
   },
   gameContent: {
     alignItems: 'center',
-    paddingVertical: 12,
-    paddingHorizontal: 16,
+    paddingVertical: 8,
+    paddingHorizontal: BOARD_MARGIN,
+  },
+  statusContainer: {
+    alignItems: 'center',
+    marginBottom: 12,
   },
   status: {
-    fontSize: 18,
+    fontSize: 17,
     fontWeight: '600',
     color: '#fff',
-    marginBottom: 16,
     textAlign: 'center',
   },
-  mainBoard: {
+  activeIndicator: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: GAP,
-    backgroundColor: '#1e293b', // Darker background for better contrast
-    padding: 8,
-    borderRadius: 12,
+    alignItems: 'center',
+    marginTop: 4,
+    gap: 6,
+  },
+  activeIndicatorDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+  },
+  activeIndicatorText: {
+    fontSize: 12,
+    color: '#94a3b8',
+  },
+  mainBoard: {
+    backgroundColor: '#334155',
+    borderRadius: 10,
+    padding: BOARD_PADDING,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  boardInner: {
+    // Contains the 3 rows of mini-boards
+  },
+  boardRow: {
+    flexDirection: 'row',
   },
   miniBoard: {
-    backgroundColor: '#e5e7eb',
-    borderRadius: 10,
-    padding: 6,
-    position: 'relative',
+    backgroundColor: '#f1f5f9',
+    borderRadius: 6,
+    padding: MINI_PADDING,
+    justifyContent: 'center',
+    alignItems: 'center',
+    overflow: 'hidden',
   },
   miniBoardActive: {
-    borderWidth: 4,
-    borderColor: ACTIVE_BOARD_COLOR,
-    backgroundColor: ACTIVE_BOARD_GLOW,
-    padding: 2,
+    backgroundColor: ACTIVE_BG_COLOR,
+    borderWidth: 2.5,
+    borderColor: ACTIVE_BORDER_COLOR,
+    // Reduce padding to account for border
+    padding: MINI_PADDING - 1,
   },
-  miniBoardWon: {
-    // Keep same styling for won boards
+  miniBoardInactive: {
+    opacity: 0.55,
   },
   miniBoardGrid: {
     flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  cellRow: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: CELL_GAP,
   },
   cell: {
     backgroundColor: '#fff',
-    borderRadius: 4,
+    borderRadius: 3,
     alignItems: 'center',
     justifyContent: 'center',
   },
   cellText: {
-    fontSize: 20,
     fontWeight: 'bold',
   },
   winnerOverlay: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(229, 231, 235, 0.95)',
-    borderRadius: 8,
   },
   winnerText: {
-    fontSize: 48,
+    fontSize: MINI_BOARD_SIZE * 0.55,
     fontWeight: 'bold',
   },
   controls: {
     flexDirection: 'row',
     gap: 12,
-    marginTop: 20,
+    marginTop: 16,
   },
   button: {
     flexDirection: 'row',
@@ -515,19 +626,19 @@ const styles = StyleSheet.create({
     color: COLORS.secondary,
   },
   gameInfo: {
-    marginTop: 16,
+    marginTop: 12,
     backgroundColor: 'rgba(255,255,255,0.1)',
     paddingVertical: 8,
     paddingHorizontal: 16,
     borderRadius: 8,
   },
   gameInfoText: {
-    color: '#fff',
+    color: '#94a3b8',
     fontSize: 14,
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+    backgroundColor: 'rgba(0, 0, 0, 0.85)',
     justifyContent: 'center',
     alignItems: 'center',
     padding: 20,
@@ -544,10 +655,10 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     padding: 24,
     width: '100%',
-    maxWidth: 400,
+    maxWidth: 340,
   },
   modeTitle: {
-    fontSize: 24,
+    fontSize: 22,
     fontWeight: 'bold',
     color: COLORS.text,
     marginBottom: 20,
@@ -563,15 +674,15 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   modeOptionText: {
-    fontSize: 18,
+    fontSize: 17,
     fontWeight: '600',
     color: COLORS.text,
   },
   aiLabel: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '600',
     color: COLORS.text,
-    marginBottom: 12,
+    marginBottom: 10,
     textAlign: 'center',
   },
   aiOptions: {
@@ -582,13 +693,13 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: COLORS.background,
     paddingVertical: 12,
-    borderRadius: 12,
+    borderRadius: 10,
     alignItems: 'center',
     borderWidth: 2,
     borderColor: COLORS.secondary,
   },
   aiButtonText: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '600',
     color: COLORS.text,
   },

@@ -273,3 +273,5 @@ user_problem_statement: "Create a comprehensive mobile Tic-Tac-Toe app with 3x3 
       message: "Diagnosed root causes: 1) React version mismatch (19.0.0 vs 19.1.0), 2) Missing React import in _layout.tsx, 3) Incorrect 9x9 board width calculation, 4) Package version conflicts"
     - agent: "main"
       message: "FIXED ALL ISSUES: 1) Updated React to 19.1.0 to match react-native-renderer, 2) Added React import to _layout.tsx, 3) Fixed 9x9 board width calculation from 345px to 363px, 4) Cleared Metro cache. All screens now working correctly with no errors. App tested and verified working on web and ready for mobile testing."
+    - agent: "main"
+      message: "FORK FIX: 1) Rewrote 9x9 board layout with robust row-based flex approach - proper 3x3 grid with explicit row/column rendering instead of fragile flexWrap, 2) Added bright amber/yellow active board highlighting with dimmed inactive boards, 3) Fixed modal dismiss behavior in both game-3x3.tsx and game-9x9.tsx - clicking outside now closes modal instead of navigating, 4) Added draw detection for 9x9, 5) Improved AI move preference (center then corners). All verified with screenshots."
