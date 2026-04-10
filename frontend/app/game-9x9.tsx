@@ -37,6 +37,8 @@ const BOARD_INNER = BOARD_OUTER_SIZE - BOARD_PADDING * 2;
 const MINI_BOARD_SIZE = Math.floor((BOARD_INNER - MINI_GAP * 2) / 3);
 // Each cell size inside a mini-board (3 cells + 2 gaps + padding)
 const CELL_SIZE = Math.floor((MINI_BOARD_SIZE - MINI_PADDING * 2 - CELL_GAP * 2) / 3);
+// Explicit grid content size (3 cells + 2 gaps)
+const GRID_SIZE = CELL_SIZE * 3 + CELL_GAP * 2;
 
 // Bright cyan/teal for active board highlight (replacing yellow)
 const ACTIVE_BORDER_COLOR = '#06b6d4'; // Bright cyan
@@ -568,7 +570,6 @@ const styles = StyleSheet.create({
     padding: MINI_PADDING,
     justifyContent: 'center',
     alignItems: 'center',
-    overflow: 'hidden',
   },
   miniBoardActive: {
     backgroundColor: ACTIVE_BG_COLOR,
@@ -577,9 +578,8 @@ const styles = StyleSheet.create({
     padding: MINI_PADDING - 1,
   },
   miniBoardGrid: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    width: GRID_SIZE,
+    height: GRID_SIZE,
   },
   cellRow: {
     flexDirection: 'row',
