@@ -23,11 +23,11 @@ type Difficulty = 'easy' | 'medium' | 'hard';
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 // === ROBUST LAYOUT CALCULATIONS ===
-const BOARD_MARGIN = 6; // smaller horizontal margin to fill more screen
-const BOARD_PADDING = 5; // padding inside the board container
-const MINI_GAP = 3; // gap between mini-boards (visible separator line)
-const CELL_GAP = 2; // gap between cells within a mini-board
-const MINI_PADDING = 3; // padding inside each mini-board
+const BOARD_MARGIN = 4; // minimal margin
+const BOARD_PADDING = 3; // minimal padding inside board
+const MINI_GAP = 2; // thin line between mini-boards
+const CELL_GAP = 1; // minimal gap between cells
+const MINI_PADDING = 2; // minimal padding inside each mini-board
 
 // Board fills nearly the full screen width
 const BOARD_OUTER_SIZE = Math.min(SCREEN_WIDTH - BOARD_MARGIN * 2, 400);
@@ -40,10 +40,9 @@ const CELL_SIZE = Math.floor((MINI_BOARD_SIZE - MINI_PADDING * 2 - CELL_GAP * 2)
 // Explicit grid content size (3 cells + 2 gaps)
 const GRID_SIZE = CELL_SIZE * 3 + CELL_GAP * 2;
 
-// Bright cyan/teal for active board highlight (replacing yellow)
-const ACTIVE_BORDER_COLOR = '#06b6d4'; // Bright cyan
-const ACTIVE_BG_COLOR = '#e0f7fa'; // Very light cyan background
-const INACTIVE_BG_COLOR = '#dfe6ed'; // Slightly darker gray for non-active
+// Bright green for active board highlight
+const ACTIVE_BORDER_COLOR = '#10b981'; // Emerald green
+const ACTIVE_BG_COLOR = '#d1fae5'; // Very light green background
 
 // Winning combinations
 const WINNING_LINES = [
@@ -314,7 +313,7 @@ export default function Game9x9Ultimate() {
             duration={200}
             style={[
               styles.cellText,
-              { color: cell === 'X' ? '#ef4444' : '#2563eb', fontSize: CELL_SIZE * 0.55 }
+              { color: cell === 'X' ? '#e11d48' : '#7c3aed', fontSize: CELL_SIZE * 0.55 }
             ]}
           >
             {cell}
@@ -493,7 +492,7 @@ export default function Game9x9Ultimate() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0f172a',
+    backgroundColor: '#0a0a1a',
   },
   header: {
     flexDirection: 'row',
@@ -501,7 +500,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 16,
     paddingVertical: 10,
-    backgroundColor: '#0f172a',
+    backgroundColor: '#0a0a1a',
   },
   backButton: {
     width: 44,
@@ -550,13 +549,13 @@ const styles = StyleSheet.create({
     color: '#94a3b8',
   },
   mainBoard: {
-    backgroundColor: '#1e293b',
+    backgroundColor: '#1a1a2e',
     borderRadius: 10,
     padding: BOARD_PADDING,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: '#334155',
+    borderColor: '#16213e',
   },
   boardInner: {
     // Contains the 3 rows of mini-boards
@@ -565,8 +564,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
   },
   miniBoard: {
-    backgroundColor: '#cbd5e1',
-    borderRadius: 6,
+    backgroundColor: '#e2e8f0',
+    borderRadius: 5,
     padding: MINI_PADDING,
     justifyContent: 'center',
     alignItems: 'center',
@@ -575,7 +574,7 @@ const styles = StyleSheet.create({
     backgroundColor: ACTIVE_BG_COLOR,
     borderWidth: 2.5,
     borderColor: ACTIVE_BORDER_COLOR,
-    padding: MINI_PADDING - 1,
+    padding: Math.max(MINI_PADDING - 1, 0),
   },
   miniBoardGrid: {
     width: GRID_SIZE,
@@ -585,12 +584,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
   },
   cell: {
-    backgroundColor: '#fff',
-    borderRadius: 3,
+    backgroundColor: '#f8fafc',
+    borderRadius: 4,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: '#94a3b8',
+    borderColor: '#a0aec0',
   },
   cellText: {
     fontWeight: 'bold',

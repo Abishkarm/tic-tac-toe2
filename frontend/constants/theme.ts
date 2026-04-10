@@ -12,8 +12,8 @@ export const COLORS = {
   warning: '#F39C12',
   
   // Player colors
-  playerX: '#E94B3C',
-  playerO: '#4A90E2',
+  playerX: '#e11d48',
+  playerO: '#7c3aed',
   
   // Game states
   cellDefault: '#FFFFFF',
